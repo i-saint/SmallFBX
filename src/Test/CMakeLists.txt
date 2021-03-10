@@ -1,0 +1,5 @@
+file(GLOB sources *.cpp *.h)
+add_executable(Test ${sources})
+add_dependencies(Test SmallFBX)
+target_include_directories(Test PUBLIC "${CMAKE_SOURCE_DIR}")
+target_link_libraries(Test SmallFBX ${ZLIB_LIBRARY_RELEASE})

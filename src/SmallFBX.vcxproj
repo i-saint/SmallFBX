@@ -47,12 +47,12 @@
     <ClInclude Include="SmallFBX\sfbxUtil.h" />
   </ItemGroup>
   <ItemGroup>
+    <Natvis Include="SmallFBX\sfbx.natvis" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="setup.vcxproj">
       <Project>{1c5de91b-7ae9-4304-9fa1-0de1aba8c02d}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Natvis Include="SmallFBX\sfbx.natvis" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3C7D88E0-B0D0-4E63-9F3F-75530B2DA797}</ProjectGuid>
