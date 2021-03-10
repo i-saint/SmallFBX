@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SmallFBX\pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="SmallFBX\sfbxAnimation.cpp" />
+    <ClCompile Include="SmallFBX\sfbxDeformer.cpp" />
+    <ClCompile Include="SmallFBX\sfbxDocument.cpp" />
+    <ClCompile Include="SmallFBX\sfbxGeometry.cpp" />
+    <ClCompile Include="SmallFBX\sfbxMaterial.cpp" />
+    <ClCompile Include="SmallFBX\sfbxModel.cpp" />
+    <ClCompile Include="SmallFBX\sfbxNode.cpp" />
+    <ClCompile Include="SmallFBX\sfbxObject.cpp" />
+    <ClCompile Include="SmallFBX\sfbxProperty.cpp" />
+    <ClCompile Include="SmallFBX\sfbxUtils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SmallFBX.h" />
+    <ClInclude Include="SmallFBX\pch.h" />
+    <ClInclude Include="SmallFBX\sfbxAlgorithm.h" />
+    <ClInclude Include="SmallFBX\sfbxAnimation.h" />
+    <ClInclude Include="SmallFBX\sfbxDeformer.h" />
+    <ClInclude Include="SmallFBX\sfbxDocument.h" />
+    <ClInclude Include="SmallFBX\sfbxGeometry.h" />
+    <ClInclude Include="SmallFBX\sfbxInternal.h" />
+    <ClInclude Include="SmallFBX\sfbxMaterial.h" />
+    <ClInclude Include="SmallFBX\sfbxMath.h" />
+    <ClInclude Include="SmallFBX\sfbxMeta.h" />
+    <ClInclude Include="SmallFBX\sfbxModel.h" />
+    <ClInclude Include="SmallFBX\sfbxNode.h" />
+    <ClInclude Include="SmallFBX\sfbxObject.h" />
+    <ClInclude Include="SmallFBX\sfbxProperty.h" />
+    <ClInclude Include="SmallFBX\sfbxRawVector.h" />
+    <ClInclude Include="SmallFBX\sfbxTokens.h" />
+    <ClInclude Include="SmallFBX\sfbxTypes.h" />
+    <ClInclude Include="SmallFBX\sfbxUtil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="setup.vcxproj">
+      <Project>{1c5de91b-7ae9-4304-9fa1-0de1aba8c02d}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="SmallFBX\sfbx.natvis" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3C7D88E0-B0D0-4E63-9F3F-75530B2DA797}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PlatformToolset>v142</PlatformToolset>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <PlatformToolset>v142</PlatformToolset>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Externals\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Externals\lib_win64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <OutDir>$(SolutionDir)_build_msvc\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)_build_msvc\obj\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions>/Zo %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <StringPooling>true</StringPooling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateMapFile>true</GenerateMapFile>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

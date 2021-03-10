@@ -1,0 +1,15 @@
+*.user
+*.png
+*.fbx
+*.abc
+*.usd
+*.usda
+*.mqoz
+*.wasm
+
+.vs/
+_out/
+_tmp/
+_dist/
+_build_*
+Externals/

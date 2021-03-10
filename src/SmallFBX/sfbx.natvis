@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="sfbx::RawVector&lt;*&gt;">
+    <DisplayString>{{ size={m_size}</DisplayString>
+    <Expand>
+      <Item Name="[size]" ExcludeView="simple">m_size</Item>
+      <Item Name="[capacity]" ExcludeView="simple">m_capacity</Item>
+      <Item Name="[address]" ExcludeView="simple">m_data</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="sfbx::Property">
+    <DisplayString Condition="m_type==PropertyType::Bool">{{ value={m_scalar.b.value} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Int16">{{ value={m_scalar.i16} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Int32">{{ value={m_scalar.i32} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Int64">{{ value={m_scalar.i64} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Float32">{{ value={m_scalar.f32} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Float64">{{ value={m_scalar.f64} type={m_type} }}</DisplayString>
+
+    <DisplayString Condition="m_type==PropertyType::BoolArray">{{ size={m_data.m_size/1} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Int16Array">{{ size={m_data.m_size/2} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Int32Array">{{ size={m_data.m_size/4} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Int64Array">{{ size={m_data.m_size/8} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Int64Array">{{ size={m_data.m_size/8} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Float32Array">{{ size={m_data.m_size/4} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Float64Array">{{ size={m_data.m_size/8} type={m_type} }}</DisplayString>
+
+    <DisplayString Condition="m_type==PropertyType::String">{{ value={m_data.m_data,s} type={m_type} }}</DisplayString>
+    <DisplayString Condition="m_type==PropertyType::Blob">{{ value={m_data.m_data,s} type={m_type} }}</DisplayString>
+
+    <Expand>
+      <Item Name="value" Condition="m_type==PropertyType::Bool">m_scalar.b.value</Item>
+      <Item Name="value" Condition="m_type==PropertyType::Int16">m_scalar.i16</Item>
+      <Item Name="value" Condition="m_type==PropertyType::Int32">m_scalar.i32</Item>
+      <Item Name="value" Condition="m_type==PropertyType::Int64">m_scalar.i64</Item>
+      <Item Name="value" Condition="m_type==PropertyType::Float32">m_scalar.f32</Item>
+      <Item Name="value" Condition="m_type==PropertyType::Float64">m_scalar.f64</Item>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::BoolArray">m_data.m_size</Item>
+      <ArrayItems Condition="m_type==PropertyType::BoolArray">
+        <Size>m_data.m_size</Size>
+        <ValuePointer>(sfbx::boolean*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::Int16Array">m_data.m_size/2</Item>
+      <ArrayItems Condition="m_type==PropertyType::Int16Array">
+        <Size>m_data.m_size/2</Size>
+        <ValuePointer>(int16*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::Int32Array">m_data.m_size/4</Item>
+      <ArrayItems Condition="m_type==PropertyType::Int32Array">
+        <Size>m_data.m_size/4</Size>
+        <ValuePointer>(int32*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::Int64Array">m_data.m_size/8</Item>
+      <ArrayItems Condition="m_type==PropertyType::Int64Array">
+        <Size>m_data.m_size/8</Size>
+        <ValuePointer>(int64*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::Float32Array">m_data.m_size/4</Item>
+      <ArrayItems Condition="m_type==PropertyType::Float32Array">
+        <Size>m_data.m_size/4</Size>
+        <ValuePointer>(float32*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::Float64Array">m_data.m_size/8</Item>
+      <ArrayItems Condition="m_type==PropertyType::Float64Array">
+        <Size>m_data.m_size/8</Size>
+        <ValuePointer>(float64*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::String">m_data.m_size</Item>
+      <ArrayItems Condition="m_type==PropertyType::String">
+        <Size>m_data.m_size</Size>
+        <ValuePointer>(char*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+
+      <Item Name="[size]" Condition="m_type==PropertyType::Blob">m_data.m_size</Item>
+      <ArrayItems Condition="m_type==PropertyType::Blob">
+        <Size>m_data.m_size</Size>
+        <ValuePointer>(char*)m_data.m_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>
