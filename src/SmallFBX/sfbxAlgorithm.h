@@ -107,7 +107,25 @@ inline size_t count(const Container& cont, const Body& body)
 }
 
 template<class Container>
-inline bool erase(Container& cont, get_value_type<Container> v)
+inline get_value_type<Container> find(const Container& cont, const get_value_type<Container>& v)
+{
+    for (auto& c : cont)
+        if (c == v)
+            return c;
+    return {};
+}
+
+template<class Container, class Condition>
+inline get_value_type<Container> find_if(const Container& cont, const Condition& cond)
+{
+    for (auto& c : cont)
+        if (cond(c))
+            return c;
+    return {};
+}
+
+template<class Container, class T>
+inline bool erase(Container& cont, const T& v)
 {
     auto it = std::find(cont.begin(), cont.end(), v);
     if (it != cont.end()) {
@@ -124,6 +142,18 @@ inline bool erase_if(Container& cont, const Body& v)
     if (it != cont.end()) {
         cont.erase(it, cont.end());
         return true;
+    }
+    return false;
+}
+
+template<class Container, class T>
+inline bool replace(Container& cont, const T& before, const T& after)
+{
+    for (auto& c : cont) {
+        if (c == before) {
+            c = after;
+            return true;
+        }
     }
     return false;
 }

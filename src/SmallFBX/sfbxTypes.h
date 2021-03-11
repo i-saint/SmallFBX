@@ -93,6 +93,31 @@ template<class T>
 inline constexpr span<T> make_span(const T* v, size_t n) { return { const_cast<T*>(v), n }; }
 
 
+template<class T>
+class reverse_span
+{
+public:
+    struct iterator
+    {
+        T* m_ptr;
+        T* operator++() { return --m_ptr; }
+        T& operator*() { return *m_ptr; }
+        bool operator==(const iterator& v) const { return m_ptr == v.m_ptr; }
+        bool operator!=(const iterator& v) const { return m_ptr != v.m_ptr; }
+    };
+
+    reverse_span(span<T> v) : m_base(v) {}
+    iterator begin() { return { m_base.data() + m_base.size() - 1 }; }
+    iterator end() { return { m_base.data() - 1 }; }
+
+private:
+    span<T> m_base;
+};
+template<class T>
+inline reverse_span<T> make_reverse(span<T> v) { return reverse_span<T>{v}; }
+
+
+
 using std::string_view;
 
 template<size_t N>

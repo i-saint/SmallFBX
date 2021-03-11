@@ -140,10 +140,7 @@ Node* Node::createChild(string_view name)
 void Node::eraseChild(Node* n)
 {
     m_document->eraseNode(n);
-
-    auto it = std::find(m_children.begin(), m_children.end(), n);
-    if (it != m_children.end())
-        m_children.erase(it);
+    erase(m_children, n);
 }
 
 string_view Node::getName() const

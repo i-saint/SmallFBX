@@ -92,39 +92,37 @@ void AnimationStack::applyAnimation(float time)
 
 bool AnimationStack::remap(Document* doc)
 {
-    for (size_t i = 0; i < m_anim_layers.size(); /**/) {
-        auto layer = m_anim_layers[i];
+    // make_reverse because elements maybe erased in the loop
+    for (auto layer : make_reverse(getAnimationLayers())) {
         if (!layer->remap(doc))
             eraseChild(layer);
-        else
-            ++i;
     }
     if (m_anim_layers.empty())
         return false;
 
-    if (auto t = doc->findAnimationStack(getFullName()))
-        t->merge(this);
-
-    if (!doc->findObject(getFullName()))
-        doc->addObject(shared_from_this());
-    for (auto layer : getAnimationLayers()) {
-        if (!doc->findObject(layer->getName()))
-            doc->addObject(layer->shared_from_this());
-
-        for (auto node : layer->getAnimationCurveNodes()) {
-            doc->addObject(node->shared_from_this());
-            for (auto curve : node->getAnimationCurves())
-                doc->addObject(curve->shared_from_this());
-        }
+    AnimationStack* dst = this;
+    if (auto s = doc->findAnimationStack(getFullName())) {
+        s->merge(this);
+        dst = s;
     }
 
+    // todo: 
+    doc->addObject(dst->shared_from_this(), true);
+    for (auto layer : dst->getAnimationLayers()) {
+        doc->addObject(layer->shared_from_this(), true);
+        for (auto node : layer->getAnimationCurveNodes()) {
+            doc->addObject(node->shared_from_this(), true);
+            for (auto curve : node->getAnimationCurves())
+                doc->addObject(curve->shared_from_this(), true);
+        }
+    }
     return true;
 }
 
 void AnimationStack::merge(AnimationStack* src)
 {
     for (auto layer : src->getAnimationLayers()) {
-        if (auto l = as<AnimationLayer>(findChild(layer->getName())))
+        if (auto l = as<AnimationLayer>(findChild(layer->getFullName())))
             l->merge(layer);
         else
             addChild(layer);
@@ -191,8 +189,16 @@ bool AnimationLayer::remap(Document* doc)
 
 void AnimationLayer::merge(AnimationLayer* src)
 {
-    for (auto node : src->getAnimationCurveNodes())
+    // make_reverse because elements maybe erased in the loop
+    for (auto node : make_reverse(src->getAnimationCurveNodes())) {
+        if (auto old = find_if(m_anim_nodes,
+            [node](auto n) { return node->getAnimationTarget() == n->getAnimationTarget() && node->getAnimationKind() == n->getAnimationKind(); }))
+        {
+            old->unlink();
+        }
+        src->eraseChild(node);
         addChild(node);
+    }
 }
 
 
@@ -412,13 +418,27 @@ bool AnimationCurveNode::remap(Document* doc)
         return false;
     for (auto& p : getParents()) {
         if (!as<AnimationLayer>(p)) {
-            if (auto np = doc->findObject(p->getName()))
-                p = np;
-            else
-                return false;
+            if (auto np = doc->findObject(p->getFullName())) {
+                p->eraseChild(this); // erase p from m_parents. so, this loop is invalidated
+                np->addChild(this);
+                return true;
+            }
         }
     }
-    return true;
+    return false;
+}
+
+void AnimationCurveNode::unlink()
+{
+    while (!m_parents.empty())
+        m_parents.back()->eraseChild(this);
+
+    while (!m_curves.empty()) {
+        auto c = m_curves.back();
+        eraseChild(c);
+        m_document->eraseObject(c);
+    }
+    m_document->eraseObject(this);
 }
 
 

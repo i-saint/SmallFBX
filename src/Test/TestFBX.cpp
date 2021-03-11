@@ -124,8 +124,8 @@ testCase(fbxWrite)
                 sfbx::Cluster* cluster = skin->createCluster(joints[i]);
                 int indices[2]{ i * 2 + 0, i * 2 + 1 };
                 float weights[2]{ 1.0f, 1.0f };
-                cluster->setIndices(make_span(indices));
-                cluster->setWeights(make_span(weights));
+                cluster->setIndices(indices);
+                cluster->setWeights(weights);
                 cluster->setBindMatrix(joints[i]->getGlobalMatrix());
             }
         }
@@ -134,11 +134,12 @@ testCase(fbxWrite)
         {
             sfbx::AnimationStack* take = doc->createObject<sfbx::AnimationStack>("take1");
             sfbx::AnimationLayer* layer = take->createLayer("deform");
+
             sfbx::AnimationCurveNode* n1 = layer->createCurveNode(sfbx::AnimationKind::Rotation, joints[1]);
-            n1->addValue(0.0f, float3{ 0.0f, 0.0f, 0.0f });
+            n1->addValue(0.0f, float3{  0.0f, 0.0f, 0.0f });
             n1->addValue(3.0f, float3{ 30.0f, 0.0f, 0.0f });
-            n1->addValue(6.0f, float3{ 0.0f, 0.0f, 0.0f });
-            n1->addValue(9.0f, float3{ -30.0f, 0.0f, 0.0f });
+            n1->addValue(6.0f, float3{  0.0f, 0.0f, 0.0f });
+            n1->addValue(9.0f, float3{-30.0f, 0.0f, 0.0f });
 
             sfbx::AnimationCurveNode* bsw = layer->createCurveNode(sfbx::AnimationKind::DeformWeight, bschannel);
             bsw->addValue(0.0f, 0.0f);
@@ -149,7 +150,7 @@ testCase(fbxWrite)
         }
 
 
-        doc->constructNodes();
+        doc->exportFBXNodes();
         doc->writeBinary("test_base_bin.fbx");
         doc->writeAscii("test_base_ascii.fbx");
     }
@@ -170,14 +171,14 @@ testCase(fbxWrite)
             sfbx::AnimationStack* take = doc->createObject<sfbx::AnimationStack>("take1");
             sfbx::AnimationLayer* layer = take->createLayer("deform");
             sfbx::AnimationCurveNode* n1 = layer->createCurveNode(sfbx::AnimationKind::Rotation, joints[1]);
-            n1->addValue(0.0f, float3{ 0.0f, 0.0f, 0.0f });
-            n1->addValue(3.0f, float3{ 30.0f, 0.0f, 0.0f });
-            n1->addValue(6.0f, float3{ 0.0f, 0.0f, 0.0f });
-            n1->addValue(9.0f, float3{ -30.0f, 0.0f, 0.0f });
-            n1->addValue(12.0f, float3{ 0.0f, 0.0f, 0.0f });
+            n1->addValue( 0.0f, float3{  0.0f, 0.0f, 0.0f });
+            n1->addValue( 3.0f, float3{ 30.0f, 0.0f, 0.0f });
+            n1->addValue( 6.0f, float3{  0.0f, 0.0f, 0.0f });
+            n1->addValue( 9.0f, float3{-30.0f, 0.0f, 0.0f });
+            n1->addValue(12.0f, float3{  0.0f, 0.0f, 0.0f });
         }
 
-        doc->constructNodes();
+        doc->exportFBXNodes();
         doc->writeBinary("test_anim_bin.fbx");
         doc->writeAscii("test_anim_ascii.fbx");
     }
@@ -210,7 +211,7 @@ static void PrintObject(sfbx::Object* obj, int depth = 0)
         testPrint("  ");
 
     testPrint("\"%s\" [0x%llx] (%s : %s)\n",
-        obj->getFullName().data(),
+        obj->getName().data(),
         obj->getID(),
         sfbx::GetObjectClassName(obj->getClass()).data(),
         sfbx::GetObjectSubClassName(obj->getSubClass()).data());

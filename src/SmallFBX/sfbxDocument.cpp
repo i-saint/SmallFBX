@@ -235,17 +235,8 @@ Node* Document::createChildNode(string_view name)
 
 void Document::eraseNode(Node* n)
 {
-    {
-        auto it = std::find_if(m_nodes.begin(), m_nodes.end(),
-            [n](const NodePtr& p) { return p.get() == n; });
-        if (it != m_nodes.end())
-            m_nodes.erase(it);
-    }
-    {
-        auto it = std::find(m_root_nodes.begin(), m_root_nodes.end(), n);
-        if (it != m_root_nodes.end())
-            m_root_nodes.erase(it);
-    }
+    erase_if(m_nodes, [n](const NodePtr& p) { return p.get() == n; });
+    erase(m_root_nodes, n);
 }
 
 Node* Document::findNode(string_view name) const
@@ -352,9 +343,11 @@ T* Document::createObject(string_view name)
 sfbxEachObjectType(Body)
 #undef Body
 
-void Document::addObject(ObjectPtr obj)
+void Document::addObject(ObjectPtr obj, bool check)
 {
     if (obj) {
+        if (check && find(m_objects, obj))
+            return;
         m_objects.push_back(obj);
         if (auto take = as<AnimationStack>(obj.get()))
             m_anim_stacks.push_back(take);
@@ -365,37 +358,27 @@ void Document::addObject(ObjectPtr obj)
 
 void Document::eraseObject(Object* obj)
 {
-    {
-        auto it = std::find_if(m_objects.begin(), m_objects.end(),
-            [obj](const ObjectPtr& p) { return p.get() == obj; });
-        if (it != m_objects.end())
-            m_objects.erase(it);
-    }
-    {
-        auto it = std::find(m_root_objects.begin(), m_root_objects.end(), obj);
-        if (it != m_root_objects.end())
-            m_root_objects.erase(it);
-    }
-    {
-        auto it = std::find(m_anim_stacks.begin(), m_anim_stacks.end(), obj);
-        if (it != m_anim_stacks.end())
-            m_anim_stacks.erase(it);
-    }
+    erase_if(m_objects, [obj](const ObjectPtr& p) { return p.get() == obj; });
+    erase(m_root_objects, obj);
+    erase(m_anim_stacks, obj);
 }
 
+// "The pointer is dangling" warning. can be ignored because m_objects hold a reference.
+#pragma warning(push)
+#pragma warning(disable:26815)
 Object* Document::findObject(int64 id) const
 {
-    auto it = std::find_if(m_objects.begin(), m_objects.end(),
-        [id](auto& p) { return p->getID() == id; });
-    return it != m_objects.end() ? it->get() : nullptr;
+    return find_if(m_objects, [&id](const ObjectPtr& p) { return p->getID() == id; }).get();
 }
 
 Object* Document::findObject(string_view name) const
 {
-    auto it = std::find_if(m_objects.begin(), m_objects.end(),
-        [&name](auto& p) { return p->getName() == name; });
-    return it != m_objects.end() ? it->get() : nullptr;
+    if (IsFullName(name))
+        return find_if(m_objects, [&name](const ObjectPtr& p) { return p->getFullName() == name; }).get();
+    else
+        return find_if(m_objects, [&name](const ObjectPtr& p) { return p->getName() == name; }).get();
 }
+#pragma warning(pop)
 
 span<ObjectPtr> Document::getAllObjects() const { return make_span(m_objects); }
 span<Object*> Document::getRootObjects() const { return make_span(m_root_objects); }
@@ -408,16 +391,14 @@ span<AnimationStack*> Document::getAnimationStacks() const
 
 AnimationStack* Document::findAnimationStack(string_view name) const
 {
-    for (auto take : m_anim_stacks)
-        if (take->getName() == name || take->getFullName() == name)
-            return take;
-    return nullptr;
+    return find_if(m_anim_stacks,
+        [&name](AnimationStack* p) { return p->getName() == name || p->getFullName() == name; });
 }
 
 AnimationStack* Document::getCurrentTake() const { return m_current_take; }
 void Document::setCurrentTake(AnimationStack* v) { m_current_take = v; }
 
-void Document::constructNodes()
+void Document::exportFBXNodes()
 {
     m_nodes.clear();
     m_root_nodes.clear();

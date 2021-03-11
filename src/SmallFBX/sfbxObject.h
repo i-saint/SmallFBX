@@ -68,6 +68,7 @@ string_view GetObjectSubClassName(ObjectSubClass t);
 
 // return full name (display name + \x00 \x01 + class name)
 std::string MakeFullName(string_view display_name, string_view class_name);
+std::string MakeFullName(string_view display_name, ObjectClass c, ObjectSubClass sc);
 // true if name is in full name (display name + \x00 \x01 + class name)
 bool IsFullName(string_view name);
 // split full name into display name & class name (e.g. "hoge\x00\x01Mesh" -> "hoge" & "Mesh")
@@ -97,7 +98,7 @@ public:
     span<Object*> getChildren() const;
     Object* getParent(size_t i = 0) const;
     Object* getChild(size_t i = 0) const;
-    Object* findChild(string_view name) const;
+    Object* findChild(string_view name) const; // name accepts both full name and display name
 
     void setID(int64 v);
     void setName(string_view v);
@@ -111,7 +112,6 @@ protected:
     virtual void importFBXObjects();
     virtual void exportFBXObjects();
     virtual void exportFBXConnections();
-    virtual string_view getInternalClassName() const;
     virtual void addParent(Object* v);
     virtual void eraseParent(Object* v);
 

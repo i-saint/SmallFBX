@@ -110,6 +110,10 @@ std::string MakeFullName(string_view display_name, string_view class_name)
     ret += class_name;
     return ret;
 }
+std::string MakeFullName(string_view display_name, ObjectClass c, ObjectSubClass sc)
+{
+    return MakeFullName(display_name, GetInternalObjectClassName(c, sc));
+}
 
 bool IsFullName(string_view name)
 {
@@ -153,7 +157,6 @@ Object::~Object()
 
 ObjectClass Object::getClass() const { return ObjectClass::Unknown; }
 ObjectSubClass Object::getSubClass() const { return ObjectSubClass::Unknown; }
-string_view Object::getInternalClassName() const { return GetInternalObjectClassName(getClass(), getSubClass()); }
 
 void Object::setNode(Node* n)
 {
@@ -234,7 +237,6 @@ void Object::eraseParent(Object* v)
 int64 Object::getID() const { return m_id; }
 string_view Object::getFullName() const { return m_name; }
 string_view Object::getName() const { return m_name.c_str(); }
-
 Node* Object::getNode() const { return m_node; }
 
 span<Object*> Object::getParents() const  { return make_span(m_parents); }
@@ -244,14 +246,15 @@ Object* Object::getChild(size_t i) const  { return i < m_children.size() ? m_chi
 
 Object* Object::findChild(string_view name) const
 {
-    for (auto c : m_children)
-        if (c->getFullName() == name)
-            return c;
+    if (IsFullName(name))
+        return find_if(m_children, [&name](Object* c) { return c->getFullName() == name; });
+    else
+        return find_if(m_children, [&name](Object* c) { return c->getName() == name; });
     return nullptr;
 }
 
 void Object::setID(int64 id) { m_id = id; }
-void Object::setName(string_view v) { m_name = MakeFullName(v, getInternalClassName()); }
+void Object::setName(string_view v) { m_name = MakeFullName(v, getClass(), getSubClass()); }
 
 
 } // namespace sfbx

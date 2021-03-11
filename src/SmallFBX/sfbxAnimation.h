@@ -51,6 +51,7 @@ protected:
     std::vector<AnimationLayer*> m_anim_layers;
 };
 
+
 class AnimationLayer : public Object
 {
 using super = Object;
@@ -74,6 +75,7 @@ protected:
 
     std::vector<AnimationCurveNode*> m_anim_nodes;
 };
+
 
 class AnimationCurveNode : public Object
 {
@@ -101,6 +103,7 @@ public:
     void addValue(float time, float3 value);
 
     bool remap(Document* doc);
+    void unlink();
 
 protected:
     void importFBXObjects() override;
@@ -110,6 +113,7 @@ protected:
     AnimationKind m_kind = AnimationKind::Unknown;
     std::vector<AnimationCurve*> m_curves;
 };
+
 
 class AnimationCurve : public Object
 {

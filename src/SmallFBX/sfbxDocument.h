@@ -48,11 +48,12 @@ public:
 
     Object* createObject(ObjectClass t, ObjectSubClass s);
     template<class T> T* createObject(string_view name = {});
-    void addObject(ObjectPtr obj);
+    void addObject(ObjectPtr obj, bool check = false);
     void eraseObject(Object* objv);
 
     Object* findObject(int64 id) const;
-    Object* findObject(string_view name) const; // name must be in node name format (e.g. "hoge\x00\x01Mesh")
+    // name accepts both full name and display name. (see MakeFullName() etc)
+    Object* findObject(string_view name) const;
     span<ObjectPtr> getAllObjects() const;
     span<Object*> getRootObjects() const;
     Model* getRootModel() const;
@@ -63,7 +64,7 @@ public:
     AnimationStack* getCurrentTake() const;
     void setCurrentTake(AnimationStack* v);
 
-    void constructNodes();
+    void exportFBXNodes();
     std::string toString();
 
 
