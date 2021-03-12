@@ -185,19 +185,12 @@ testCase(fbxWrite)
 
 
     {
-        sfbx::DocumentPtr base = sfbx::MakeDocument();
-        base->read("test_base_bin.fbx");
-
         // test animation remap
-        {
-            sfbx::DocumentPtr anim = sfbx::MakeDocument();
-            anim->read("test_anim_bin.fbx");
-            auto takes = anim->getAnimationStacks();
-            if (!takes.empty())
-                takes[0]->remap(base);
-        }
-        if (auto take = base->getCurrentTake()) {
-            take->applyAnimation(11.0f);
+        sfbx::DocumentPtr doc = sfbx::MakeDocument("test_base_bin.fbx");
+        if (doc->mergeAnimations("test_anim_bin.fbx")) {
+            if (auto take = doc->getCurrentTake()) {
+                take->applyAnimation(11.0f);
+            }
         }
     }
 }
@@ -252,30 +245,12 @@ testCase(fbxRead)
     if (path.empty())
         return;
 
-    sfbx::DocumentPtr doc = sfbx::MakeDocument();
-    if (doc->read(path)) {
-        if (!path2.empty()) {
-            sfbx::DocumentPtr doc2 = sfbx::MakeDocument();
-            if (doc2->read(path2)) {
-                auto takes = doc2->getAnimationStacks();
-                if (!takes.empty()) {
-                    if (takes[0]->remap(doc)) {
-                        doc->setCurrentTake(takes[0]);
-                    }
-                }
-            }
-        }
-        if (!path3.empty()) {
-            sfbx::DocumentPtr doc3 = sfbx::MakeDocument();
-            if (doc3->read(path3)) {
-                auto takes = doc3->getAnimationStacks();
-                if (!takes.empty()) {
-                    if (takes[0]->remap(doc)) {
-                        doc->setCurrentTake(takes[0]);
-                    }
-                }
-            }
-        }
+    sfbx::DocumentPtr doc = sfbx::MakeDocument(path);
+    if (doc->valid()) {
+        if (!path2.empty())
+            doc->mergeAnimations(path2);
+        if (!path3.empty())
+            doc->mergeAnimations(path3);
 
         testPrint("Objects:\n");
         for (auto obj : doc->getRootObjects())

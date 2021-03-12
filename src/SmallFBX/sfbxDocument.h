@@ -24,6 +24,10 @@ class Document
 {
 public:
     Document();
+    explicit Document(std::istream& input);
+    explicit Document(const std::string& path);
+    bool valid() const;
+
     bool read(std::istream &input);
     bool read(const std::string& path);
     bool writeBinary(std::ostream& output);
@@ -60,9 +64,13 @@ public:
 
     span<AnimationStack*> getAnimationStacks() const;
     AnimationStack* findAnimationStack(string_view name) const;
-
     AnimationStack* getCurrentTake() const;
     void setCurrentTake(AnimationStack* v);
+
+    bool mergeAnimations(Document* doc);
+    bool mergeAnimations(DocumentPtr doc) { return mergeAnimations(doc.get()); }
+    bool mergeAnimations(std::istream& input);
+    bool mergeAnimations(const std::string& path);
 
     void exportFBXNodes();
     std::string toString();

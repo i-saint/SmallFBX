@@ -28,6 +28,21 @@ Document::Document()
     initialize();
 }
 
+Document::Document(std::istream& input)
+{
+    read(input);
+}
+
+Document::Document(const std::string& path)
+{
+    read(path);
+}
+
+bool Document::valid() const
+{
+    return !m_objects.empty();
+}
+
 void Document::initialize()
 {
     m_root_model = createObject<Model>("Scene");
@@ -37,7 +52,6 @@ void Document::initialize()
 bool Document::read(std::istream& is)
 {
     unload();
-    initialize();
 
     char magic[std::size(g_fbx_header_magic)];
     readv(is, magic, std::size(g_fbx_header_magic));
@@ -60,6 +74,7 @@ bool Document::read(std::istream& is)
         }
 
         if (Node* objects = findNode(sfbxS_Objects)) {
+            initialize();
             for (Node* n : objects->getChildren()) {
                 if (Object* obj = createObject(GetObjectClass(n), GetObjectSubClass(n))) {
                     obj->setNode(n);
@@ -397,6 +412,33 @@ AnimationStack* Document::findAnimationStack(string_view name) const
 
 AnimationStack* Document::getCurrentTake() const { return m_current_take; }
 void Document::setCurrentTake(AnimationStack* v) { m_current_take = v; }
+
+
+bool Document::mergeAnimations(Document* doc)
+{
+    if (!doc || !doc->valid())
+        return false;
+
+    size_t num_merged = 0;
+    for (auto take : doc->getAnimationStacks()) {
+        if (take->remap(this))
+            ++num_merged;
+    }
+    if (!m_current_take && !m_anim_stacks.empty())
+        m_current_take = m_anim_stacks.front();
+    return num_merged != 0;
+}
+
+bool Document::mergeAnimations(std::istream& input)
+{
+    return mergeAnimations(MakeDocument(input));
+}
+
+bool Document::mergeAnimations(const std::string& path)
+{
+    return mergeAnimations(MakeDocument(path));
+}
+
 
 void Document::exportFBXNodes()
 {
