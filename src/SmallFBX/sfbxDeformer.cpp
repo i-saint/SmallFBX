@@ -180,7 +180,6 @@ const JointMatrices& Skin::getJointMatrices() const
 {
     auto& ret = m_joint_matrices;
 
-    // todo: cache result
     size_t cclusters = m_clusters.size();
     ret.bindpose.resize(cclusters);
     ret.global_transform.resize(cclusters);

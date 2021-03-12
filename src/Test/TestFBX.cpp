@@ -188,15 +188,13 @@ testCase(fbxWrite)
         sfbx::DocumentPtr base = sfbx::MakeDocument();
         base->read("test_base_bin.fbx");
 
+        // test animation remap
         {
             sfbx::DocumentPtr anim = sfbx::MakeDocument();
             anim->read("test_anim_bin.fbx");
             auto takes = anim->getAnimationStacks();
-            if (!takes.empty()) {
-                if (takes[0]->remap(base)) {
-                    base->setCurrentTake(takes[0]);
-                }
-            }
+            if (!takes.empty())
+                takes[0]->remap(base);
         }
         if (auto take = base->getCurrentTake()) {
             take->applyAnimation(11.0f);

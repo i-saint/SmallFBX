@@ -51,7 +51,7 @@ class Property
 {
 public:
     Property();
-    Property(Property&& v);
+    Property(Property&& v) noexcept;
     Property(const Property&) = delete;
     Property& operator=(const Property&) = delete;
 

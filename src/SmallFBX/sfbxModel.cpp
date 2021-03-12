@@ -262,6 +262,8 @@ void Model::setPostRotation(float3 v) { MarkDirty(m_post_rotation, v); }
 void Model::setScale(float3 v)        { MarkDirty(m_scale, v); }
 #undef MarkDirty
 
+
+
 ObjectSubClass Null::getSubClass() const { return ObjectSubClass::Null; }
 
 void Null::exportFBXObjects()
@@ -277,6 +279,21 @@ void Null::addChild(Object* v)
     if (auto attr = as<NullAttribute>(v))
         m_attr = attr;
 }
+
+void Null::eraseChild(Object* v)
+{
+    super::eraseChild(v);
+    if (v == m_attr)
+        m_attr = nullptr;
+}
+
+NullAttribute* Null::getAttrbute()
+{
+    if (!m_attr)
+        m_attr = createChild<NullAttribute>(getName());
+    return m_attr;
+}
+
 
 
 ObjectSubClass Root::getSubClass() const { return ObjectSubClass::Root; }
@@ -294,6 +311,21 @@ void Root::addChild(Object* v)
     if (auto attr = as<RootAttribute>(v))
         m_attr = attr;
 }
+
+void Root::eraseChild(Object* v)
+{
+    super::eraseChild(v);
+    if (v == m_attr)
+        m_attr = nullptr;
+}
+
+RootAttribute* Root::getAttrbute()
+{
+    if (!m_attr)
+        m_attr = createChild<RootAttribute>(getName());
+    return m_attr;
+}
+
 
 
 ObjectSubClass LimbNode::getSubClass() const { return ObjectSubClass::LimbNode; }
@@ -314,6 +346,22 @@ void LimbNode::addChild(Object* v)
 }
 
 
+void LimbNode::eraseChild(Object* v)
+{
+    super::eraseChild(v);
+    if (v == m_attr)
+        m_attr = nullptr;
+}
+
+LimbNodeAttribute* LimbNode::getAttrbute()
+{
+    if (!m_attr)
+        m_attr = createChild<LimbNodeAttribute>(getName());
+    return m_attr;
+}
+
+
+
 ObjectSubClass Mesh::getSubClass() const { return ObjectSubClass::Mesh; }
 
 void Mesh::importFBXObjects()
@@ -321,7 +369,7 @@ void Mesh::importFBXObjects()
     super::importFBXObjects();
 
 #ifdef sfbxEnableLegacyFormatSupport
-    // in old fbx, Model::Mesh has geometry data
+    // in old fbx, Model::Mesh has geometry data (Geometry::Mesh does not exist)
     auto n = getNode();
     if (n->findChild(sfbxS_Vertices)) {
         getGeometry()->setNode(n);
@@ -338,6 +386,15 @@ void Mesh::addChild(Object* v)
         m_materials.push_back(material);
 }
 
+void Mesh::eraseChild(Object* v)
+{
+    super::eraseChild(v);
+    if (v == m_geom)
+        m_geom = nullptr;
+    else if (auto material = as<Material>(v))
+        erase(m_materials, material);
+}
+
 GeomMesh* Mesh::getGeometry()
 {
     if (!m_geom)
@@ -349,6 +406,7 @@ span<Material*> Mesh::getMaterials() const
 {
     return make_span(m_materials);
 }
+
 
 
 ObjectSubClass Light::getSubClass() const { return ObjectSubClass::Light; }
@@ -376,6 +434,21 @@ void Light::addChild(Object* v)
         m_attr = attr;
 }
 
+void Light::eraseChild(Object* v)
+{
+    super::eraseChild(v);
+    if (v == m_attr)
+        m_attr = nullptr;
+}
+
+LightAttribute* Light::getAttrbute()
+{
+    if (!m_attr)
+        m_attr = createChild<LightAttribute>(getName());
+    return m_attr;
+}
+
+
 
 ObjectSubClass Camera::getSubClass() const { return ObjectSubClass::Camera; }
 
@@ -399,6 +472,20 @@ void Camera::addChild(Object* v)
     super::addChild(v);
     if (auto attr = as<CameraAttribute>(v))
         m_attr = attr;
+}
+
+void Camera::eraseChild(Object* v)
+{
+    super::eraseChild(v);
+    if (v == m_attr)
+        m_attr = nullptr;
+}
+
+CameraAttribute* Camera::getAttrbute()
+{
+    if (!m_attr)
+        m_attr = createChild<CameraAttribute>(getName());
+    return m_attr;
 }
 
 } // namespace sfbx

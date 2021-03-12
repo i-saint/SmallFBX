@@ -49,6 +49,8 @@ struct JointMatrices
     RawVector<float4x4> joint_transform;
 };
 
+// Skin deformer allows a GeomMesh to skeletal animation. 
+// a joint object corresponds to a "Cluster" that holds weights of vertices and bind-matrix.
 class Skin : public Deformer
 {
 using super = Deformer;
@@ -81,7 +83,6 @@ protected:
     mutable JointMatrices m_joint_matrices;
 };
 
-
 class Cluster : public SubDeformer
 {
 using super = SubDeformer;
@@ -93,8 +94,8 @@ public:
     float4x4 getTransform() const;
     float4x4 getTransformLink() const;
 
-    void setIndices(span<int> v);
-    void setWeights(span<float> v);
+    void setIndices(span<int> v);   // v: indices of vertices
+    void setWeights(span<float> v); // v: weights of vertices. size of weights must be equal with indices
     void setBindMatrix(float4x4 v); // v: global matrix of the joint (not inverted)
 
 protected:

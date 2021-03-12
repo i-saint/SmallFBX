@@ -3,11 +3,12 @@
 
 namespace sfbx {
 
-// Geometry and its subclasses:
-//  (Mesh, Shape)
-
 template<class T>
 inline constexpr bool is_deformer = std::is_base_of_v<Deformer, T>;
+
+
+// Geometry and its subclasses:
+//  (Mesh, Shape)
 
 class Geometry : public Object
 {
@@ -31,6 +32,8 @@ protected:
 };
 
 
+// FBX can store multiple normal / UV / vertex color channels ("layer" in FBX term).
+// LayerElement store these data.
 template<class T>
 struct LayerElement
 {
@@ -43,6 +46,7 @@ using LayerElementF2 = LayerElement<float2>;
 using LayerElementF3 = LayerElement<float3>;
 using LayerElementF4 = LayerElement<float4>;
 
+// GeomMesh represents polygon mesh data. parent of GeomMesh seems to be always Mesh.
 class GeomMesh : public Geometry
 {
 using super = Geometry;
@@ -52,9 +56,9 @@ public:
     span<int> getCounts() const;
     span<int> getIndices() const;
     span<float3> getPoints() const;
-    span<LayerElementF3> getNormalLayers() const;
-    span<LayerElementF2> getUVLayers() const;
-    span<LayerElementF4> getColorLayers() const;
+    span<LayerElementF3> getNormalLayers() const; // can be zero or multiple layers
+    span<LayerElementF2> getUVLayers() const;     // can be zero or multiple layers
+    span<LayerElementF4> getColorLayers() const;  // can be zero or multiple layers
 
     void setCounts(span<int> v);
     void setIndices(span<int> v);
@@ -79,6 +83,8 @@ protected:
     std::vector<LayerElementF4> m_color_layers;
 };
 
+
+// a Shape is a target of blend shape. see BlendShape and BlendShapeChannel in sfbxDeformer.h.
 class Shape : public Geometry
 {
 using super = Geometry;

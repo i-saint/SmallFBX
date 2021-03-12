@@ -39,7 +39,7 @@ uint32_t SizeOfElement(PropertyType type)
 
 Property::Property() {}
 
-Property::Property(Property&& v)
+Property::Property(Property&& v) noexcept
     : m_type(v.m_type)
     , m_scalar(v.m_scalar)
     , m_data(std::move(v.m_data))

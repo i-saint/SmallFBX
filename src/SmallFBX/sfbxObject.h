@@ -90,8 +90,8 @@ public:
     virtual void eraseChild(Object* v);
 
     int64 getID() const;
-    string_view getFullName() const; // in object name format (e.g. "hoge\x00\x01Mesh")
-    string_view getName() const; // return display part (e.g. "hoge" if object name is "hoge\x00\x01Mesh")
+    string_view getFullName() const; // display name + class name (e.g. "hoge\x00\x01Mesh")
+    string_view getName() const; // display name (e.g. "hoge" if object name is "hoge\x00\x01Mesh")
     Node* getNode() const;
 
     span<Object*> getParents() const;

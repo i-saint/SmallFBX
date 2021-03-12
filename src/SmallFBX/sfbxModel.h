@@ -116,12 +116,18 @@ protected:
 };
 
 
+// Null, Root, and LimbNode represent joints.
+// usually Null or Root is the root of joints, but a joint structure with LimbNode root also seems to be valid.
+
 class Null : public Model
 {
 using super = Model;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
+    void eraseChild(Object* v) override;
+
+    NullAttribute* getAttrbute();
 
 protected:
     void exportFBXObjects() override;
@@ -135,6 +141,9 @@ using super = Model;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
+    void eraseChild(Object* v) override;
+
+    RootAttribute* getAttrbute();
 
 protected:
     void exportFBXObjects() override;
@@ -142,13 +151,15 @@ protected:
     RootAttribute* m_attr{};
 };
 
-
 class LimbNode : public Model
 {
 using super = Model;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
+    void eraseChild(Object* v) override;
+
+    LimbNodeAttribute* getAttrbute();
 
 protected:
     void exportFBXObjects() override;
@@ -157,12 +168,16 @@ protected:
 };
 
 
+// Mesh represents polygon mesh objects, but it holds just transform data.
+// geometry data is stored in GeomMesh. (see sfbxGeometry.h)
+
 class Mesh : public Model
 {
 using super = Model;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
+    void eraseChild(Object* v) override;
 
     GeomMesh* getGeometry();
     span<Material*> getMaterials() const;
@@ -181,6 +196,9 @@ using super = Model;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
+    void eraseChild(Object* v) override;
+
+    LightAttribute* getAttrbute();
 
 protected:
     void importFBXObjects() override;
@@ -195,11 +213,15 @@ class Camera : public Model
 using super = Model;
 public:
     ObjectSubClass getSubClass() const override;
-    void importFBXObjects() override;
-    void exportFBXObjects() override;
     void addChild(Object* v) override;
+    void eraseChild(Object* v) override;
+
+    CameraAttribute* getAttrbute();
 
 protected:
+    void importFBXObjects() override;
+    void exportFBXObjects() override;
+
     CameraAttribute* m_attr{};
 };
 
