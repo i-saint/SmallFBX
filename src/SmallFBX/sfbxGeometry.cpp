@@ -118,6 +118,13 @@ void GeomMesh::importFBXObjects()
             GetChildPropertyValue<int>(tmp.indices, n, sfbxS_ColorIndex);
             m_color_layers.push_back(std::move(tmp));
         }
+        else if (n->getName() == sfbxS_LayerLayerElementMaterial) {
+            // colors
+            LayerElementI1 tmp;
+            tmp.name = GetChildPropertyString(n, sfbxS_Name);
+            GetChildPropertyValue<int>(tmp.data, n, sfbxS_Materials);
+            m_material_layers.push_back(std::move(tmp));
+        }
     }
 }
 
@@ -222,6 +229,21 @@ void GeomMesh::exportFBXObjects()
             l->createChild(sfbxS_ColorIndex, layer.indices);
     }
 
+    // material layers
+    for (auto& layer : m_material_layers) {
+        if (layer.data.empty())
+            continue;
+
+        ++clayers;
+        auto l = n->createChild(sfbxS_LayerLayerElementMaterial);
+        l->createChild(sfbxS_Version, sfbxI_LayerElementMaterialVersion);
+        l->createChild(sfbxS_Name, layer.name);
+
+        l->createChild(sfbxS_MappingInformationType, "ByPolygon");
+        l->createChild(sfbxS_ReferenceInformationType, "Direct");
+        l->createChild(sfbxS_Materials, layer.data);
+    }
+
     if (clayers) {
         // layer info
         auto l = n->createChild(sfbxS_Layer, 0);
@@ -239,6 +261,11 @@ void GeomMesh::exportFBXObjects()
         if (!m_color_layers.empty()) {
             auto le = l->createChild(sfbxS_LayerElement);
             le->createChild(sfbxS_Type, sfbxS_LayerElementColor);
+            le->createChild(sfbxS_TypeIndex, 0);
+        }
+        if (!m_material_layers.empty()) {
+            auto le = l->createChild(sfbxS_LayerElement);
+            le->createChild(sfbxS_Type, sfbxS_LayerLayerElementMaterial);
             le->createChild(sfbxS_TypeIndex, 0);
         }
     }

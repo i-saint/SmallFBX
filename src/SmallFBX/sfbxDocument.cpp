@@ -337,6 +337,8 @@ Object* Document::createObject(ObjectClass c, ObjectSubClass s)
     case ObjectClass::AnimationLayer:    r = new AnimationLayer(); break;
     case ObjectClass::AnimationCurveNode:r = new AnimationCurveNode(); break;
     case ObjectClass::AnimationCurve:    r = new AnimationCurve(); break;
+    case ObjectClass::Implementation:    r = new Implementation(); break;
+    case ObjectClass::BindingTable:      r = new BindingTable(); break;
     default: break;
     }
 

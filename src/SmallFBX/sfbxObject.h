@@ -18,8 +18,8 @@ enum class ObjectClass : int
     AnimationLayer,
     AnimationCurveNode,
     AnimationCurve,
-    Implementation, // not supported
-    BindingTable,   // not supported
+    Implementation,
+    BindingTable,
 };
 
 enum class ObjectSubClass : int

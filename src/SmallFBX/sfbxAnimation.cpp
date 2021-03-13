@@ -216,6 +216,8 @@ static const AnimationKindInfo g_akinfo[] = {
     {AnimationKind::Scale,        sfbxS_S, sfbxS_LclScale, {"d|X", "d|Y", "d|Z"}},
     {AnimationKind::DeformWeight, sfbxS_DeformPercent, sfbxS_DeformPercent, {"d|" sfbxS_DeformPercent}},
     {AnimationKind::FocalLength,  sfbxS_FocalLength, sfbxS_FocalLength, {"d|" sfbxS_FocalLength}},
+    {AnimationKind::filmboxTypeID, sfbxS_filmboxTypeID, sfbxS_filmboxTypeID, {"d|" sfbxS_filmboxTypeID}},
+    {AnimationKind::lockInfluenceWeights, sfbxS_lockInfluenceWeights, sfbxS_lockInfluenceWeights, {"d|" sfbxS_lockInfluenceWeights}},
 };
 static const AnimationKindInfo* FindAnimationKindInfo(AnimationKind v)
 {
@@ -236,16 +238,53 @@ static const AnimationKindInfo* FindAnimationKindInfo(string_view name)
 struct AnimationCurveInfo
 {
     string_view link_name;
+    string_view fbx_typename;
     PropertyType type;
     int element_index;
+
+    void parseDefaultValueNode(Node* p, void* dst) const
+    {
+        switch (type) {
+        case PropertyType::Int16:
+            ((int32*)dst)[element_index] = (int32)GetPropertyValue<int16>(p, 4);
+            break;
+        case PropertyType::Int32:
+            ((int32*)dst)[element_index] = (int32)GetPropertyValue<int32>(p, 4);
+            break;
+        case PropertyType::Float64:
+            ((float32*)dst)[element_index] = (float32)GetPropertyValue<float64>(p, 4);
+            break;
+        default:
+            break;
+        }
+    }
+
+    void addDefaultValueNode(Node* props, float v) const
+    {
+        switch (type) {
+        case PropertyType::Int16:
+            props->createChild(sfbxS_P, link_name, fbx_typename, "", sfbxS_A, (int16)v);
+            break;
+        case PropertyType::Int32:
+            props->createChild(sfbxS_P, link_name, fbx_typename, "", sfbxS_A, (int32)v);
+            break;
+        case PropertyType::Float64:
+            props->createChild(sfbxS_P, link_name, fbx_typename, "", sfbxS_A, (float64)v);
+            break;
+        default:
+            break;
+        }
+    }
 };
+
 static const AnimationCurveInfo g_acinfo[] = {
-    {"d|X", PropertyType::Float64, 0},
-    {"d|Y", PropertyType::Float64, 1},
-    {"d|Z", PropertyType::Float64, 2},
-    {"d|DeformPercent", PropertyType::Float64, 0},
-    {"d|FocalLength", PropertyType::Float64, 0},
-    {"d|lockInfluenceWeights", PropertyType::Int32, 0},
+    {"d|X", sfbxS_Number, PropertyType::Float64, 0},
+    {"d|Y", sfbxS_Number, PropertyType::Float64, 1},
+    {"d|Z", sfbxS_Number, PropertyType::Float64, 2},
+    {"d|" sfbxS_DeformPercent,        sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_FocalLength,          sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_filmboxTypeID,        sfbxS_Short,  PropertyType::Int16,   0},
+    {"d|" sfbxS_lockInfluenceWeights, sfbxS_Bool,   PropertyType::Int32,   0},
 };
 static const AnimationCurveInfo* FindAnimationCurveInfo(string_view name)
 {
@@ -263,22 +302,12 @@ void AnimationCurveNode::importFBXObjects()
     super::importFBXObjects();
 
     auto name = getName();
-    if (auto info = FindAnimationKindInfo(name)) {
-        m_kind = info->kind;
+    if (auto aki = FindAnimationKindInfo(name)) {
+        m_kind = aki->kind;
         EnumerateProperties(getNode(), [this](Node* p) {
-            auto name = GetPropertyString(p);
-            if (auto info = FindAnimationCurveInfo(name)) {
-                switch (info->type) {
-                case PropertyType::Int32:
-                    m_default_value.i = GetPropertyValue<int>(p, 4);
-                    break;
-                case PropertyType::Float64:
-                    m_default_value.f3[info->element_index] = (float)GetPropertyValue<double>(p, 4);
-                    break;
-                default:
-                    break;
-                }
-            }
+            auto link_name = GetPropertyString(p);
+            if (auto aci = FindAnimationCurveInfo(link_name))
+                aci->parseDefaultValueNode(p, &m_default_value);
             });
     }
     else {
@@ -291,12 +320,11 @@ void AnimationCurveNode::exportFBXObjects()
     super::exportFBXObjects();
 
     auto props = getNode()->createChild(sfbxS_Properties70);
-    if (auto* akd = FindAnimationKindInfo(getName())) {
-        size_t n = m_curves.size();
-        if (akd->curve_names.size() == n) {
-            for (size_t i = 0; i < n; ++i) {
-                float v = m_curves[i]->evaluate(m_curves[i]->getStartTime());
-                props->createChild(sfbxS_P, akd->curve_names[i], sfbxS_Number, "", sfbxS_A, (float64)v);
+    if (auto* aki = FindAnimationKindInfo(getName())) {
+        for (auto curve : m_curves) {
+            if (auto aci = FindAnimationCurveInfo(curve->m_link_name)) {
+                float v = curve->evaluate(curve->getStartTime());
+                aci->addDefaultValueNode(props, v);
             }
         }
     }
@@ -307,13 +335,11 @@ void AnimationCurveNode::exportFBXConnections()
     // ignore super::constructLinks()
 
     m_document->createLinkOO(this, getParent());
-
-    auto* acd = FindAnimationKindInfo(m_kind);
-    if (acd && m_curves.size() == acd->curve_names.size()) {
+    if (auto* info = FindAnimationKindInfo(m_kind)) {
         if (auto* target = getAnimationTarget())
-            m_document->createLinkOP(this, target, acd->link_name);
-        for (size_t i = 0; i < m_curves.size(); ++i)
-            m_document->createLinkOP(m_curves[i], this, acd->curve_names[i]);
+            m_document->createLinkOP(this, target, info->link_name);
+        for (auto curve : m_curves)
+            m_document->createLinkOP(curve, this, curve->m_link_name);
     }
 }
 
@@ -451,8 +477,10 @@ void AnimationCurveNode::initialize(AnimationKind kind, Object* target)
 
     if (auto* acd = FindAnimationKindInfo(m_kind)) {
         setName(acd->object_name);
-        for (auto& cn : acd->curve_names)
-            createChild<AnimationCurve>();
+        for (auto& link_name : acd->curve_names) {
+            auto curve = m_document->createObject<AnimationCurve>();
+            addChild(curve, link_name);
+        }
     }
 }
 

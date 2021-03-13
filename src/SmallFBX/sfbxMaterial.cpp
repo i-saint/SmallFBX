@@ -7,18 +7,6 @@ namespace sfbx {
 ObjectClass Video::getClass() const { return ObjectClass::Video; }
 ObjectSubClass Video::getSubClass() const { return ObjectSubClass::Clip; }
 
-void Video::importFBXObjects()
-{
-    super::importFBXObjects();
-    // todo
-}
-
-void Video::exportFBXObjects()
-{
-    super::exportFBXObjects();
-    // todo
-}
-
 
 ObjectClass Texture::getClass() const { return ObjectClass::Texture; }
 
@@ -37,4 +25,10 @@ void Material::exportFBXObjects()
     super::exportFBXObjects();
     // todo
 }
+
+
+ObjectClass Implementation::getClass() const { return ObjectClass::Implementation; }
+
+ObjectClass BindingTable::getClass() const { return ObjectClass::BindingTable; }
+
 } // namespace sfbx
