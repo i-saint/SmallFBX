@@ -9,6 +9,15 @@ Node::Node()
 {
 }
 
+Node::Node(Node&& v) noexcept
+    : m_document(std::move(v.m_document))
+    , m_name(std::move(v.m_name))
+    , m_properties(std::move(v.m_properties))
+    , m_parent(std::move(v.m_parent))
+    , m_children(std::move(v.m_children))
+{
+}
+
 uint64_t Node::read(std::istream& is, uint64_t start_offset)
 {
     uint64_t ret = 0;
@@ -222,6 +231,9 @@ Node* Node::findChild(string_view name) const
 
 std::string Node::toString(int depth) const
 {
+    if (isNull())
+        return {};
+
     std::string s;
     AddTabs(s, depth);
     s += getName();

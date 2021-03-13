@@ -134,6 +134,8 @@
 #define sfbxS_NbPoseNodes           "NbPoseNodes"
 #define sfbxS_Total1                "Total1"
 #define sfbxS_Link_DeformAcuracy    "Link_DeformAcuracy"
+#define sfbxS_SkinningType          "SkinningType"
+#define sfbxS_Linear                "Linear"
 #define sfbxS_DeformPercent         "DeformPercent"
 #define sfbxS_FullWeights           "FullWeights"
 #define sfbxS_Connect               "Connect"

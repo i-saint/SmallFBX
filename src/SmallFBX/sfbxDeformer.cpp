@@ -38,7 +38,7 @@ void Skin::exportFBXObjects()
     auto n = getNode();
     n->createChild(sfbxS_Version, sfbxI_SkinVersion);
     n->createChild(sfbxS_Link_DeformAcuracy, (float64)50.0);
-
+    n->createChild(sfbxS_SkinningType, sfbxS_Linear);
 }
 
 void Skin::addParent(Object* v)
@@ -247,7 +247,6 @@ void Cluster::exportFBXObjects()
 
     auto n = getNode();
     n->createChild(sfbxS_Version, sfbxI_ClusterVersion);
-    n->createChild(sfbxS_Mode, sfbxS_Total1);
     n->createChild(sfbxS_UserData, "", "");
     if (!m_indices.empty())
         n->createChild(sfbxS_Indexes, m_indices);
@@ -342,7 +341,7 @@ void BlendShapeChannel::importFBXObjects()
 
     for (auto c : getChildren()) {
         if (auto shape = as<Shape>(c))
-            m_shape_data.push_back({ shape, 1.0f });
+            m_shape_data.push_back({ shape, 100.0f });
     }
     if (auto n = getNode()->findChild(sfbxS_FullWeights)) {
         RawVector<float> weights;
@@ -350,7 +349,7 @@ void BlendShapeChannel::importFBXObjects()
         if (weights.size() == m_shape_data.size()) {
             size_t n = weights.size();
             for (size_t i = 0; i < n; ++i)
-                m_shape_data[i].weight = weights[i] * 0.01f; // percent to 0-1
+                m_shape_data[i].weight = weights[i];
         }
     }
 }
@@ -366,7 +365,7 @@ void BlendShapeChannel::exportFBXObjects()
         auto full_weights = n->createChild(sfbxS_FullWeights);
         auto* dst = full_weights->createProperty()->allocateArray<float64>(m_shape_data.size()).data();
         for (auto& data : m_shape_data)
-            *dst++ = float64(data.weight) * 100.0; // 0-1 to percent
+            *dst++ = float64(data.weight);
     }
 }
 

@@ -8,6 +8,7 @@ class Node
 friend class Document;
 public:
     Node();
+    Node(Node&& v) noexcept;
     Node(const Node&) = delete;
     Node& operator=(const Node&) = delete;
 

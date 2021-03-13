@@ -564,8 +564,15 @@ void Document::exportFBXNodes()
     createNode(sfbxS_Connections);
 
     // index based loop because m_objects maybe push_backed in the loop
-    for (size_t i = 0; i < m_objects.size(); ++i)
+    for (size_t i = 0; i < m_objects.size(); ++i) {
         m_objects[i]->exportFBXObjects();
+
+        // FBX SDK seems to require the object node to have at least one child
+        // (Blender seems not to require this, though)
+        auto n = m_objects[i]->getNode();
+        if (n && n->getChildren().empty())
+            n->createChild();
+    }
     for (size_t i = 0; i < m_objects.size(); ++i)
         m_objects[i]->exportFBXConnections();
 

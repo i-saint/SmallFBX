@@ -107,11 +107,12 @@ testCase(fbxWrite)
             bschannel = blendshape->createChannel(shape);
         }
 
-        // joints & skin
+        // joints & skin & bindpose
         sfbx::Model* joints[5]{};
         sfbx::Skin* skin{};
+        sfbx::BindPose* bind_pose{};
         {
-            joints[0] = root->createChild<sfbx::Root>("joint1");
+            joints[0] = root->createChild<sfbx::LimbNode>("joint1");
             joints[1] = joints[0]->createChild<sfbx::LimbNode>("joint2");
             joints[2] = joints[1]->createChild<sfbx::LimbNode>("joint3");
             joints[3] = joints[2]->createChild<sfbx::LimbNode>("joint4");
@@ -128,6 +129,11 @@ testCase(fbxWrite)
                 cluster->setWeights(weights);
                 cluster->setBindMatrix(joints[i]->getGlobalMatrix());
             }
+
+            bind_pose = doc->createObject<sfbx::BindPose>();
+            bind_pose->addPoseData(node, node->getGlobalMatrix());
+            for (int i = 0; i < 5; ++i)
+                bind_pose->addPoseData(joints[i], joints[i]->getGlobalMatrix());
         }
 
         // animation
@@ -137,14 +143,14 @@ testCase(fbxWrite)
 
             sfbx::AnimationCurveNode* n1 = layer->createCurveNode(sfbx::AnimationKind::Rotation, joints[1]);
             n1->addValue(0.0f, float3{  0.0f, 0.0f, 0.0f });
-            n1->addValue(3.0f, float3{ 30.0f, 0.0f, 0.0f });
-            n1->addValue(6.0f, float3{  0.0f, 0.0f, 0.0f });
-            n1->addValue(9.0f, float3{-30.0f, 0.0f, 0.0f });
+            n1->addValue(1.0f, float3{ 30.0f, 0.0f, 0.0f });
+            n1->addValue(2.0f, float3{  0.0f, 0.0f, 0.0f });
+            n1->addValue(3.0f, float3{-30.0f, 0.0f, 0.0f });
 
             sfbx::AnimationCurveNode* bsw = layer->createCurveNode(sfbx::AnimationKind::DeformWeight, bschannel);
             bsw->addValue(0.0f, 0.0f);
-            bsw->addValue(4.5f, 100.0f);
-            bsw->addValue(9.0f, 0.0f);
+            bsw->addValue(1.5f, 100.0f);
+            bsw->addValue(3.0f, 0.0f);
 
             doc->setCurrentTake(take);
         }
@@ -171,11 +177,11 @@ testCase(fbxWrite)
             sfbx::AnimationStack* take = doc->createObject<sfbx::AnimationStack>("take1");
             sfbx::AnimationLayer* layer = take->createLayer("deform");
             sfbx::AnimationCurveNode* n1 = layer->createCurveNode(sfbx::AnimationKind::Rotation, joints[1]);
-            n1->addValue( 0.0f, float3{  0.0f, 0.0f, 0.0f });
-            n1->addValue( 3.0f, float3{ 30.0f, 0.0f, 0.0f });
-            n1->addValue( 6.0f, float3{  0.0f, 0.0f, 0.0f });
-            n1->addValue( 9.0f, float3{-30.0f, 0.0f, 0.0f });
-            n1->addValue(12.0f, float3{  0.0f, 0.0f, 0.0f });
+            n1->addValue(0.0f, float3{  0.0f, 0.0f, 0.0f });
+            n1->addValue(1.0f, float3{ 30.0f, 0.0f, 0.0f });
+            n1->addValue(2.0f, float3{  0.0f, 0.0f, 0.0f });
+            n1->addValue(3.0f, float3{-30.0f, 0.0f, 0.0f });
+            n1->addValue(4.0f, float3{  0.0f, 0.0f, 0.0f });
         }
 
         doc->exportFBXNodes();
