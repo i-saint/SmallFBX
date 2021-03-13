@@ -203,32 +203,55 @@ void AnimationLayer::merge(AnimationLayer* src)
 
 
 
-struct AnimationKindData
+struct AnimationKindInfo
 {
     AnimationKind kind;
     string_view object_name;
     string_view link_name;
     std::vector<string_view> curve_names;
 };
-static const AnimationKindData g_akdata[] = {
+static const AnimationKindInfo g_akinfo[] = {
     {AnimationKind::Position,     sfbxS_T, sfbxS_LclTranslation, {"d|X", "d|Y", "d|Z"}},
     {AnimationKind::Rotation,     sfbxS_R, sfbxS_LclRotation, {"d|X", "d|Y", "d|Z"}},
     {AnimationKind::Scale,        sfbxS_S, sfbxS_LclScale, {"d|X", "d|Y", "d|Z"}},
     {AnimationKind::DeformWeight, sfbxS_DeformPercent, sfbxS_DeformPercent, {"d|" sfbxS_DeformPercent}},
     {AnimationKind::FocalLength,  sfbxS_FocalLength, sfbxS_FocalLength, {"d|" sfbxS_FocalLength}},
 };
-static const AnimationKindData* FindAnimationKindData(AnimationKind v)
+static const AnimationKindInfo* FindAnimationKindInfo(AnimationKind v)
 {
-    for (auto& akd : g_akdata)
-        if (akd.kind == v)
-            return &akd;
+    for (auto& info : g_akinfo)
+        if (info.kind == v)
+            return &info;
     return nullptr;
 }
-static const AnimationKindData* FindAnimationKindData(string_view name)
+static const AnimationKindInfo* FindAnimationKindInfo(string_view name)
 {
-    for (auto& akd : g_akdata)
-        if (akd.object_name == name)
-            return &akd;
+    for (auto& info : g_akinfo)
+        if (info.object_name == name)
+            return &info;
+    return nullptr;
+}
+
+
+struct AnimationCurveInfo
+{
+    string_view link_name;
+    PropertyType type;
+    int element_index;
+};
+static const AnimationCurveInfo g_acinfo[] = {
+    {"d|X", PropertyType::Float64, 0},
+    {"d|Y", PropertyType::Float64, 1},
+    {"d|Z", PropertyType::Float64, 2},
+    {"d|DeformPercent", PropertyType::Float64, 0},
+    {"d|FocalLength", PropertyType::Float64, 0},
+    {"d|lockInfluenceWeights", PropertyType::Int32, 0},
+};
+static const AnimationCurveInfo* FindAnimationCurveInfo(string_view name)
+{
+    for (auto& info : g_acinfo)
+        if (info.link_name == name)
+            return &info;
     return nullptr;
 }
 
@@ -240,11 +263,22 @@ void AnimationCurveNode::importFBXObjects()
     super::importFBXObjects();
 
     auto name = getName();
-    auto* akd = FindAnimationKindData(name);
-    if (akd) {
-        m_kind = akd->kind;
-        EnumerateProperties(getNode(), [this, akd](Node* p) {
-            // todo
+    if (auto info = FindAnimationKindInfo(name)) {
+        m_kind = info->kind;
+        EnumerateProperties(getNode(), [this](Node* p) {
+            auto name = GetPropertyString(p);
+            if (auto info = FindAnimationCurveInfo(name)) {
+                switch (info->type) {
+                case PropertyType::Int32:
+                    m_default_value.i = GetPropertyValue<int>(p, 4);
+                    break;
+                case PropertyType::Float64:
+                    m_default_value.f3[info->element_index] = (float)GetPropertyValue<double>(p, 4);
+                    break;
+                default:
+                    break;
+                }
+            }
             });
     }
     else {
@@ -257,7 +291,7 @@ void AnimationCurveNode::exportFBXObjects()
     super::exportFBXObjects();
 
     auto props = getNode()->createChild(sfbxS_Properties70);
-    if (auto* akd = FindAnimationKindData(getName())) {
+    if (auto* akd = FindAnimationKindInfo(getName())) {
         size_t n = m_curves.size();
         if (akd->curve_names.size() == n) {
             for (size_t i = 0; i < n; ++i) {
@@ -274,7 +308,7 @@ void AnimationCurveNode::exportFBXConnections()
 
     m_document->createLinkOO(this, getParent());
 
-    auto* acd = FindAnimationKindData(m_kind);
+    auto* acd = FindAnimationKindInfo(m_kind);
     if (acd && m_curves.size() == acd->curve_names.size()) {
         if (auto* target = getAnimationTarget())
             m_document->createLinkOP(this, target, acd->link_name);
@@ -288,6 +322,17 @@ void AnimationCurveNode::addChild(Object* v)
     super::addChild(v);
     if (auto curve = as<AnimationCurve>(v))
         m_curves.push_back(curve);
+}
+
+void AnimationCurveNode::addChild(Object* v, string_view p)
+{
+    super::addChild(v, p);
+    if (auto curve = as<AnimationCurve>(v)) {
+        if (auto acd = FindAnimationCurveInfo(p)) {
+            curve->m_link_name = p;
+            curve->m_element_index = acd->element_index;
+        }
+    }
 }
 
 void AnimationCurveNode::eraseChild(Object* v)
@@ -317,31 +362,50 @@ span<AnimationCurve*> AnimationCurveNode::getAnimationCurves() const
 
 float AnimationCurveNode::getStartTime() const
 {
-    return m_curves.empty() ? 0.0f : m_curves[0]->getStartTime();
+    if (m_curves.empty()) {
+        return 0.0f;
+    }
+    else {
+        float ret = std::numeric_limits<float>::max();
+        for (auto curve : m_curves)
+            ret = std::min(ret, curve->getStartTime());
+        return ret;
+    }
 }
 
 float AnimationCurveNode::getStopTime() const
 {
-    return m_curves.empty() ? 0.0f : m_curves[0]->getStopTime();
+    if (m_curves.empty()) {
+        return 0.0f;
+    }
+    else {
+        float ret = std::numeric_limits<float>::min();
+        for (auto curve : m_curves)
+            ret = std::max(ret, curve->getStopTime());
+        return ret;
+    }
 }
 
-float AnimationCurveNode::evaluate(float time) const
+float AnimationCurveNode::evaluateF1(float time) const
 {
     if (m_curves.empty())
-        return 0.0f;
+        return m_default_value.f3.x;
     return m_curves[0]->evaluate(time);
 }
 
-float3 AnimationCurveNode::evaluate3(float time) const
+float3 AnimationCurveNode::evaluateF3(float time) const
 {
-    if (m_curves.size() != 3)
-        return float3::zero();
+    float3 r = m_default_value.f3;
+    for (auto curve : m_curves)
+        r[curve->m_element_index] = curve->evaluate(time);
+    return r;
+}
 
-    return float3{
-        m_curves[0]->evaluate(time),
-        m_curves[1]->evaluate(time),
-        m_curves[2]->evaluate(time),
-    };
+int AnimationCurveNode::evaluateI(float time) const
+{
+    if (m_curves.empty())
+        return m_default_value.i;
+    return (int)m_curves[0]->evaluate(time);
 }
 
 void AnimationCurveNode::applyAnimation(float time) const
@@ -353,19 +417,19 @@ void AnimationCurveNode::applyAnimation(float time) const
     switch (m_kind) {
     case AnimationKind::Position:
         if (auto* model = as<Model>(target))
-            model->setPosition(evaluate3(time));
+            model->setPosition(evaluateF3(time));
         break;
     case AnimationKind::Rotation:
         if (auto* model = as<Model>(target))
-            model->setRotation(evaluate3(time));
+            model->setRotation(evaluateF3(time));
         break;
     case AnimationKind::Scale:
         if (auto* model = as<Model>(target))
-            model->setScale(evaluate3(time));
+            model->setScale(evaluateF3(time));
         break;
     case AnimationKind::DeformWeight:
         if (auto* bsc = as<BlendShapeChannel>(target))
-            bsc->setWeight(evaluate(time));
+            bsc->setWeight(evaluateF1(time));
         break;
     case AnimationKind::FocalLength:
         if (auto cam = as<Camera>(target)) {
@@ -385,7 +449,7 @@ void AnimationCurveNode::initialize(AnimationKind kind, Object* target)
     if (target)
         target->addChild(this);
 
-    if (auto* acd = FindAnimationKindData(m_kind)) {
+    if (auto* acd = FindAnimationKindInfo(m_kind)) {
         setName(acd->object_name);
         for (auto& cn : acd->curve_names)
             createChild<AnimationCurve>();

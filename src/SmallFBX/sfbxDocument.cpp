@@ -93,12 +93,11 @@ bool Document::read(std::istream& is)
                         parent->addChild(child);
                 }
                 else if (name == sfbxS_C && ct == sfbxS_OP) {
-                    auto name = GetPropertyString(n, 3); // todo
                     Object* child = findObject(GetPropertyValue<int64>(n, 1));
                     Object* parent = findObject(GetPropertyValue<int64>(n, 2));
-                    if (child && parent) {
-                        parent->addChild(child);
-                    }
+                    auto p = GetPropertyString(n, 3);
+                    if (child && parent)
+                        parent->addChild(child, p);
                 }
 #ifdef sfbxEnableLegacyFormatSupport
                 else if (name == sfbxS_Connect && ct == sfbxS_OO) {
@@ -214,11 +213,15 @@ bool Document::writeAscii(const std::string& path)
 void Document::unload()
 {
     m_version = FileVersion::Default;
+
     m_nodes.clear();
     m_root_nodes.clear();
+
     m_objects.clear();
     m_root_objects.clear();
+    m_anim_stacks.clear();
     m_root_model = {};
+    m_current_take = {};
 }
 
 FileVersion Document::getVersion()
@@ -328,6 +331,7 @@ Object* Document::createObject(ObjectClass c, ObjectSubClass s)
         }
         break;
     case ObjectClass::Video:             r = new Video(); break;
+    case ObjectClass::Texture:           r = new Texture(); break;
     case ObjectClass::Material:          r = new Material(); break;
     case ObjectClass::AnimationStack:    r = new AnimationStack(); break;
     case ObjectClass::AnimationLayer:    r = new AnimationLayer(); break;
@@ -376,24 +380,27 @@ void Document::eraseObject(Object* obj)
     erase_if(m_objects, [obj](const ObjectPtr& p) { return p.get() == obj; });
     erase(m_root_objects, obj);
     erase(m_anim_stacks, obj);
+
+    //// this should not be happen
+    //if (obj == m_root_model)
+    //    m_root_model = nullptr;
 }
 
 // "The pointer is dangling" warning. can be ignored because m_objects hold a reference.
 #pragma warning(push)
 #pragma warning(disable:26815)
+
 Object* Document::findObject(int64 id) const
 {
     return find_if(m_objects, [&id](const ObjectPtr& p) { return p->getID() == id; }).get();
 }
 
+#pragma warning(pop)
+
 Object* Document::findObject(string_view name) const
 {
-    if (IsFullName(name))
-        return find_if(m_objects, [&name](const ObjectPtr& p) { return p->getFullName() == name; }).get();
-    else
-        return find_if(m_objects, [&name](const ObjectPtr& p) { return p->getName() == name; }).get();
+    return FindObjectByName(m_objects, name);
 }
-#pragma warning(pop)
 
 span<ObjectPtr> Document::getAllObjects() const { return make_span(m_objects); }
 span<Object*> Document::getRootObjects() const { return make_span(m_root_objects); }
@@ -406,8 +413,7 @@ span<AnimationStack*> Document::getAnimationStacks() const
 
 AnimationStack* Document::findAnimationStack(string_view name) const
 {
-    return find_if(m_anim_stacks,
-        [&name](AnimationStack* p) { return p->getName() == name || p->getFullName() == name; });
+    return FindObjectByName(m_anim_stacks, name);
 }
 
 AnimationStack* Document::getCurrentTake() const { return m_current_take; }
@@ -623,5 +629,16 @@ std::string Document::toString()
     }
     return s;
 }
+
+
+template<class T> T* Object::createChild(string_view name)
+{
+    auto ret = m_document->createObject<T>(name);
+    addChild(ret);
+    return ret;
+}
+#define Body(T) template T* Object::createChild(string_view name);
+sfbxEachObjectType(Body)
+#undef Body
 
 } // namespace sfbx

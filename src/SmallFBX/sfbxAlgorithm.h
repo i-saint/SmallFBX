@@ -13,6 +13,9 @@ inline void resize(Cont& dst, size_t n)
     }
 }
 
+template<class T, sfbxRestrict(std::is_pointer_v<T>)> inline T get_raw_ptr(T v) { return v; }
+template<class T> inline T* get_raw_ptr(const std::shared_ptr<T>& v) { return v.get(); }
+
 
 template<class Container, class Body>
 inline void each(Container& val, const Body& body)

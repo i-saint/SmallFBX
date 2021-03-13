@@ -12,11 +12,14 @@ enum class ObjectClass : int
     Deformer,
     Pose,
     Video,
+    Texture,
     Material,
     AnimationStack,
     AnimationLayer,
     AnimationCurveNode,
     AnimationCurve,
+    Implementation, // not supported
+    BindingTable,   // not supported
 };
 
 enum class ObjectSubClass : int
@@ -38,8 +41,10 @@ enum class ObjectSubClass : int
 };
 
 #define sfbxEachObjectClass(Body)\
-    Body(NodeAttribute) Body(Model) Body(Geometry) Body(Deformer) Body(Pose) Body(Video) Body(Material)\
-    Body(AnimationStack) Body(AnimationLayer) Body(AnimationCurveNode) Body(AnimationCurve)
+    Body(NodeAttribute) Body(Model) Body(Geometry) Body(Deformer) Body(Pose)\
+    Body(Video) Body(Texture) Body(Material)\
+    Body(AnimationStack) Body(AnimationLayer) Body(AnimationCurveNode) Body(AnimationCurve)\
+    Body(Implementation) Body(BindingTable)
 
 #define sfbxEachObjectSubClass(Body)\
     Body(Null) Body(Root) Body(LimbNode) Body(Light) Body(Camera) Body(Mesh) Body(Shape)\
@@ -87,6 +92,7 @@ public:
 
     template<class T> T* createChild(string_view name = {});
     virtual void addChild(Object* v);
+    virtual void addChild(Object* v, string_view p);
     virtual void eraseChild(Object* v);
 
     int64 getID() const;

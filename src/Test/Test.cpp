@@ -190,8 +190,7 @@ int main(int argc, char *argv[])
     int run_count = 0;
     for (int i = 1; i < argc; ++i) {
         if (char *sep = std::strstr(argv[i], "=")) {
-            *(sep++) = '\0';
-            test::GetArgs().push_back({ argv[i] , sep });
+            test::GetArgs().push_back({ std::string(argv[i], sep), std::string(sep + 1) });
         }
     }
     for (int i = 1; i < argc; ++i) {

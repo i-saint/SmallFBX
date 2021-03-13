@@ -247,16 +247,18 @@ void GeomMesh::exportFBXObjects()
 span<int> GeomMesh::getCounts() const { return make_span(m_counts); }
 span<int> GeomMesh::getIndices() const { return make_span(m_indices); }
 span<float3> GeomMesh::getPoints() const { return make_span(m_points); }
-span<LayerElementF3> GeomMesh::getNormalLayers() const { return make_span(m_normal_layers); }
-span<LayerElementF2> GeomMesh::getUVLayers() const { return make_span(m_uv_layers); }
-span<LayerElementF4> GeomMesh::getColorLayers() const { return make_span(m_color_layers); }
+span<LayerElementF3> GeomMesh::getNormalLayers() const  { return make_span(m_normal_layers); }
+span<LayerElementF2> GeomMesh::getUVLayers() const      { return make_span(m_uv_layers); }
+span<LayerElementF4> GeomMesh::getColorLayers() const   { return make_span(m_color_layers); }
+span<LayerElementI1> GeomMesh::getMatrialLayers() const { return make_span(m_material_layers); }
 
 void GeomMesh::setCounts(span<int> v) { m_counts = v; }
 void GeomMesh::setIndices(span<int> v) { m_indices = v; }
 void GeomMesh::setPoints(span<float3> v) { m_points = v; }
-void GeomMesh::addNormalLayer(LayerElementF3&& v) { m_normal_layers.push_back(std::move(v)); }
-void GeomMesh::addUVLayer(LayerElementF2&& v) { m_uv_layers.push_back(std::move(v)); }
-void GeomMesh::addColorLayer(LayerElementF4&& v) { m_color_layers.push_back(std::move(v)); }
+void GeomMesh::addNormalLayer(LayerElementF3&& v)   { m_normal_layers.push_back(std::move(v)); }
+void GeomMesh::addUVLayer(LayerElementF2&& v)       { m_uv_layers.push_back(std::move(v)); }
+void GeomMesh::addColorLayer(LayerElementF4&& v)    { m_color_layers.push_back(std::move(v)); }
+void GeomMesh::addMaterialLayer(LayerElementI1&& v) { m_material_layers.push_back(std::move(v)); }
 
 span<float3> GeomMesh::getPointsDeformed(bool apply_transform)
 {

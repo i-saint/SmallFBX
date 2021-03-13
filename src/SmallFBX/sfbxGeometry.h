@@ -40,11 +40,12 @@ struct LayerElement
     std::string name;
     RawVector<int> indices; // can be empty. in that case, size of data must equal with vertex count or index count.
     RawVector<T> data;
-    RawVector<T> data_deformed;
+    RawVector<T> data_deformed; // relevant only for normal layers for now.
 };
 using LayerElementF2 = LayerElement<float2>;
 using LayerElementF3 = LayerElement<float3>;
 using LayerElementF4 = LayerElement<float4>;
+using LayerElementI1 = LayerElement<int>;
 
 // GeomMesh represents polygon mesh data. parent of GeomMesh seems to be always Mesh.
 class GeomMesh : public Geometry
@@ -59,6 +60,7 @@ public:
     span<LayerElementF3> getNormalLayers() const; // can be zero or multiple layers
     span<LayerElementF2> getUVLayers() const;     // can be zero or multiple layers
     span<LayerElementF4> getColorLayers() const;  // can be zero or multiple layers
+    span<LayerElementI1> getMatrialLayers() const;// can be zero or multiple layers
 
     void setCounts(span<int> v);
     void setIndices(span<int> v);
@@ -66,6 +68,7 @@ public:
     void addNormalLayer(LayerElementF3&& v);
     void addUVLayer(LayerElementF2&& v);
     void addColorLayer(LayerElementF4&& v);
+    void addMaterialLayer(LayerElementI1&& v);
 
     span<float3> getPointsDeformed(bool apply_transform = false);
     span<float3> getNormalsDeformed(size_t layer_index = 0, bool apply_transform = false);
@@ -81,6 +84,7 @@ protected:
     std::vector<LayerElementF3> m_normal_layers;
     std::vector<LayerElementF2> m_uv_layers;
     std::vector<LayerElementF4> m_color_layers;
+    std::vector<LayerElementI1> m_material_layers;
 };
 
 

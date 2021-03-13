@@ -20,6 +20,9 @@ void Video::exportFBXObjects()
 }
 
 
+ObjectClass Texture::getClass() const { return ObjectClass::Texture; }
+
+
 
 ObjectClass Material::getClass() const { return ObjectClass::Material; }
 

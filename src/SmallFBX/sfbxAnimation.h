@@ -83,6 +83,7 @@ using super = Object;
 public:
     ObjectClass getClass() const override;
     void addChild(Object* v) override;
+    void addChild(Object* v, string_view p) override;
     void eraseChild(Object* v) override;
 
     AnimationKind getAnimationKind() const;
@@ -92,8 +93,9 @@ public:
     float getStopTime() const;
 
     // evaluate curve(s)
-    float evaluate(float time) const;
-    float3 evaluate3(float time) const;
+    float evaluateF1(float time) const;
+    float3 evaluateF3(float time) const;
+    int evaluateI(float time) const;
 
     // apply evaluated value to target
     void applyAnimation(float time) const;
@@ -112,12 +114,18 @@ protected:
 
     AnimationKind m_kind = AnimationKind::Unknown;
     std::vector<AnimationCurve*> m_curves;
+
+    union {
+        float3 f3;
+        int i;
+    } m_default_value;
 };
 
 
 class AnimationCurve : public Object
 {
 using super = Object;
+friend class AnimationCurveNode;
 public:
     ObjectClass getClass() const override;
 
@@ -139,6 +147,9 @@ protected:
     float m_default{};
     RawVector<float> m_times;
     RawVector<float> m_values;
+
+    std::string m_link_name;
+    int m_element_index{};
 };
 
 } // namespace sfbx

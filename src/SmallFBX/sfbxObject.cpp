@@ -1,11 +1,6 @@
 #include "pch.h"
 #include "sfbxInternal.h"
 #include "sfbxObject.h"
-#include "sfbxModel.h"
-#include "sfbxGeometry.h"
-#include "sfbxDeformer.h"
-#include "sfbxMaterial.h"
-#include "sfbxAnimation.h"
 #include "sfbxDocument.h"
 
 namespace sfbx {
@@ -197,23 +192,16 @@ void Object::exportFBXConnections()
         m_document->createLinkOO(this, parent);
 }
 
-template<class T> T* Object::createChild(string_view name)
-{
-    auto ret = m_document->createObject<T>(name);
-    addChild(ret);
-    return ret;
-}
-#define Body(T) template T* Object::createChild(string_view name);
-sfbxEachObjectType(Body)
-#undef Body
-
-
 void Object::addChild(Object* v)
 {
     if (v) {
         m_children.push_back(v);
         v->addParent(this);
     }
+}
+void Object::addChild(Object* v, string_view /*p*/)
+{
+    addChild(v);
 }
 
 void Object::eraseChild(Object* v)

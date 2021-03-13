@@ -164,6 +164,18 @@ inline void EnumerateProperties(Node* n, const Body& body)
     }
 }
 
+bool IsFullName(string_view name);
+
+template<class Cont>
+inline auto FindObjectByName(const Cont& objects, string_view name)
+{
+    if (IsFullName(name))
+        return get_raw_ptr(find_if(objects, [&name](const auto& p) { return p->getFullName() == name; }));
+    else
+        return get_raw_ptr(find_if(objects, [&name](const auto& p) { return p->getName() == name; }));
+}
+
+
 class CounterStream : public std::ostream
 {
 public:
