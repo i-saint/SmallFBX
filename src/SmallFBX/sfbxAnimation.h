@@ -12,8 +12,10 @@ enum class AnimationKind
     Position,       // float3
     Rotation,       // float3
     Scale,          // float3
-    DeformWeight,   // float
+    Color,          // float3
+    Intensity,      // float
     FocalLength,    // float
+    DeformWeight,   // float
     filmboxTypeID,  // int
     lockInfluenceWeights, // int
 };

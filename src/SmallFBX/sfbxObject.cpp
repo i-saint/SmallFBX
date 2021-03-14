@@ -157,7 +157,7 @@ void Object::setNode(Node* n)
 {
     m_node = n;
     if (n) {
-        // do these in constructObject() is too late because of referencing other objects...
+        // do these in importFBXObjects() is too late because of referencing other objects...
         size_t cprops = GetPropertyCount(n);
         if (cprops == 3) {
             m_id = GetPropertyValue<int64>(n, 0);

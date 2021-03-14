@@ -448,6 +448,12 @@ LightAttribute* Light::getAttrbute()
     return m_attr;
 }
 
+float3 Light::getColor() const { return m_color; }
+float Light::getIntensity() const { return m_intensity; }
+
+void Light::setColor(float3 v) { m_color = v; }
+void Light::setIntensity(float v) { m_intensity = v; }
+
 
 
 ObjectSubClass Camera::getSubClass() const { return ObjectSubClass::Camera; }
@@ -487,5 +493,27 @@ CameraAttribute* Camera::getAttrbute()
         m_attr = createChild<CameraAttribute>(getName());
     return m_attr;
 }
+
+float3 Camera::getUpVector() const { return m_up_vector; }
+float Camera::getFocalLength() const { return m_focal_length; }
+float2 Camera::getApertureSize() const { return m_aperture; }
+float2 Camera::getAspectSize() const { return m_aspect; }
+float2 Camera::getFildOfView() const
+{
+    return float2{
+        compute_fov(m_aperture.x, m_focal_length),
+        compute_fov(m_aperture.y, m_focal_length),
+    };
+}
+float Camera::getNearPlane() const { return m_near_plane; }
+float Camera::getFarPlane() const { return m_far_plane; }
+
+
+void Camera::setUpVector(float3 v) { m_up_vector = v; }
+void Camera::setFocalLength(float v) { m_focal_length = v; }
+void Camera::setApetrueSize(float2 v) { m_aperture = v; }
+void Camera::setAspectSize(float2 v) { m_aspect = v; }
+void Camera::setNearPlane(float v) { m_near_plane = v; }
+void Camera::setFarPlane(float v) { m_far_plane = v; }
 
 } // namespace sfbx

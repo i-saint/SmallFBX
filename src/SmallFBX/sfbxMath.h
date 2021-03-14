@@ -6,6 +6,7 @@ namespace sfbx {
 
 constexpr float PI = 3.14159265358979323846264338327950288419716939937510f;
 constexpr float DegToRad = PI / 180.0f;
+constexpr float RadToDeg = 1.0f / (PI / 180.0f);
 
 template<class T> inline tvec2<T> operator-(const tvec2<T>& v) { return{ -v.x, -v.y }; }
 template<class T, class U> inline tvec2<T> operator+(const tvec2<T>& l, const tvec2<U>& r) { return{ l.x + r.x, l.y + r.y }; }
@@ -259,8 +260,7 @@ template<class T> inline tmat4x4<T>& operator*=(tmat4x4<T>& a, const tmat4x4<T>&
     return a;
 }
 
-template<class T>
-inline static tvec3<T> mul_v(const tmat4x4<T>& m, const tvec3<T>& v)
+template<class T> inline tvec3<T> mul_v(const tmat4x4<T>& m, const tvec3<T>& v)
 {
     return {
         m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2],
@@ -269,8 +269,7 @@ inline static tvec3<T> mul_v(const tmat4x4<T>& m, const tvec3<T>& v)
     };
 }
 
-template<class T>
-inline static tvec3<T> mul_p(const tmat4x4<T>& m, const tvec3<T>& v)
+template<class T> inline tvec3<T> mul_p(const tmat4x4<T>& m, const tvec3<T>& v)
 {
     return {
         m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2] + m[3][0],
@@ -302,7 +301,7 @@ template<class T> inline tmat4x4<T> invert(const tmat4x4<T>& x)
 
     auto r = x[0][0] * s[0][0] + x[0][1] * s[1][0] + x[0][2] * s[2][0];
 
-    if (abs(r) >= 1) {
+    if (std::abs(r) >= 1) {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 s[i][j] /= r;
@@ -310,11 +309,11 @@ template<class T> inline tmat4x4<T> invert(const tmat4x4<T>& x)
         }
     }
     else {
-        auto mr = abs(r) / std::numeric_limits<T>::min();
+        auto mr = std::abs(r) / std::numeric_limits<T>::min();
 
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                if (mr > abs(s[i][j])) {
+                if (mr > std::abs(s[i][j])) {
                     s[i][j] /= r;
                 }
                 else {
@@ -329,6 +328,20 @@ template<class T> inline tmat4x4<T> invert(const tmat4x4<T>& x)
     s[3][1] = -x[3][0] * s[0][1] - x[3][1] * s[1][1] - x[3][2] * s[2][1];
     s[3][2] = -x[3][0] * s[0][2] - x[3][1] * s[1][2] - x[3][2] * s[2][2];
     return s;
+}
+
+// aperture and focal_length: in millimeter
+// return fov in degree
+template<class T> inline T compute_fov(T aperture, T focal_length)
+{
+    return T(2.0) * std::atan(aperture / (T(2.0) * focal_length)) * RadToDeg;
+}
+
+// aperture: in millimeter
+// fov: degree
+template<class T> inline T compute_focal_length(T aperture, T fov)
+{
+    return aperture / std::tan(fov * DegToRad / T(2.0)) / T(2.0);
 }
 
 } // namespace sfbx

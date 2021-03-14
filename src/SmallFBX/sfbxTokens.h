@@ -172,7 +172,9 @@
 #define sfbxS_T                 "T"
 #define sfbxS_R                 "R"
 #define sfbxS_S                 "S"
-#define sfbxS_FocalLength       "FocalLength"
+#define sfbxS_Color                 "Color"
+#define sfbxS_Intensity             "Intensity"
+#define sfbxS_FocalLength           "FocalLength"
 #define sfbxS_filmboxTypeID         "filmboxTypeID"
 #define sfbxS_lockInfluenceWeights  "lockInfluenceWeights"
 

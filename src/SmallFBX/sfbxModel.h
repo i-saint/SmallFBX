@@ -199,12 +199,19 @@ public:
     void eraseChild(Object* v) override;
 
     LightAttribute* getAttrbute();
+    float3 getColor() const;
+    float getIntensity() const;
+
+    void setColor(float3 v);
+    void setIntensity(float v);
 
 protected:
     void importFBXObjects() override;
     void exportFBXObjects() override;
 
     LightAttribute* m_attr{};
+    float3 m_color = float3::one();
+    float m_intensity = 1.0f;
 };
 
 
@@ -217,12 +224,35 @@ public:
     void eraseChild(Object* v) override;
 
     CameraAttribute* getAttrbute();
+    float3 getUpVector() const;
+    float getFocalLength() const; // in mm
+    float2 getApertureSize() const; // in mm
+    float2 getAspectSize() const;
+    float2 getFildOfView() const;
+    float getNearPlane() const;
+    float getFarPlane() const;
+
+    void setUpVector(float3 v);
+    void setFocalLength(float v); // in mm
+    void setApetrueSize(float2 v); // in mm
+    void setAspectSize(float2 v);
+    void setNearPlane(float v);
+    void setFarPlane(float v);
+
+    // there is no setFildOfView() because fov is computed by aperture and focal length.
+    // focal length can be computed by compute_focal_length() in sfbxMath.h
 
 protected:
     void importFBXObjects() override;
     void exportFBXObjects() override;
 
     CameraAttribute* m_attr{};
+    float3 m_up_vector{ 0.0f, 1.0f, 0.0f };
+    float m_focal_length = 50.0f; // in mm
+    float2 m_aperture{ 36.0f, 24.0f }; // in mm
+    float2 m_aspect{ 1920.0f, 1080.0f };
+    float m_near_plane = 0.1f;
+    float m_far_plane = 1000.0f;
 };
 
 
