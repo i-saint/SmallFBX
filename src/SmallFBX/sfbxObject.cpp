@@ -169,6 +169,7 @@ void Object::setNode(Node* n)
             m_name = GetPropertyString(n, 0);
         }
 #endif
+        n->setForceNullTerminate(true);
     }
 }
 

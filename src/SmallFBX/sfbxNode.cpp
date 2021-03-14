@@ -70,7 +70,7 @@ uint64_t Node::write(std::ostream& os, uint64_t start_offset)
 
     uint64_t property_size = 0;
     uint64_t children_size = 0;
-    bool null_terminate = !m_children.empty() || m_properties.empty() || m_force_null_terminate;
+    bool null_terminate = isNullTerminated();
     {
         CounterStream cs;
         for (auto& prop : m_properties)
@@ -247,7 +247,7 @@ std::string Node::toString(int depth) const
         [depth](auto& p) { return p.toString(depth); });
     s += " ";
 
-    if (!m_children.empty() || (m_children.empty() && m_properties.empty())) {
+    if (isNullTerminated()) {
         s += "{\n";
         for (auto* c : m_children)
             s += c->toString(depth + 1);
@@ -275,5 +275,11 @@ uint32_t Node::getHeaderSize() const
         return 13;
     }
 }
+
+bool Node::isNullTerminated() const
+{
+    return !m_children.empty() || m_properties.empty() || m_force_null_terminate;
+}
+
 
 } // namespace sfbx

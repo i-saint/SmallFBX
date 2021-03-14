@@ -51,6 +51,7 @@ private:
 
     uint32_t getDocumentVersion() const;
     uint32_t getHeaderSize() const;
+    bool isNullTerminated() const;
 
     Document* m_document{};
     std::string m_name;
