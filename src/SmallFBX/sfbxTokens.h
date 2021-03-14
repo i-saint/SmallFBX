@@ -172,9 +172,22 @@
 #define sfbxS_T                 "T"
 #define sfbxS_R                 "R"
 #define sfbxS_S                 "S"
+
+#define sfbxS_LightType             "LightType"
 #define sfbxS_Color                 "Color"
 #define sfbxS_Intensity             "Intensity"
+#define sfbxS_OuterAngle            "OuterAngle"
+#define sfbxS_InnerAngle            "InnerAngle"
+
+#define sfbxS_CameraProjectionType  "CameraProjectionType"
 #define sfbxS_FocalLength           "FocalLength"
+#define sfbxS_FilmWidth             "FilmWidth"
+#define sfbxS_FilmHeight            "FilmHeight"
+#define sfbxS_FilmOffsetX           "FilmOffsetX"
+#define sfbxS_FilmOffsetY           "FilmOffsetY"
+#define sfbxS_NearPlane             "NearPlane"
+#define sfbxS_FarPlane              "FarPlane"
+
 #define sfbxS_filmboxTypeID         "filmboxTypeID"
 #define sfbxS_lockInfluenceWeights  "lockInfluenceWeights"
 
@@ -187,6 +200,7 @@
 #define sfbxS_Number            "Number"
 #define sfbxS_Short             "Short"
 #define sfbxS_Bool              "Bool"
+#define sfbxS_enum              "enum"
 #define sfbxS_Take              "Take"
 #define sfbxS_FileName          "FileName"
 #define sfbxS_LocalTime         "LocalTime"

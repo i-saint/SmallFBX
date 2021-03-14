@@ -15,15 +15,16 @@ void AnimationStack::importFBXObjects()
 {
     super::importFBXObjects();
 
-    EnumerateProperties(getNode(), [this](Node* n) {
-        if (GetPropertyString(n, 0) == sfbxS_LocalStart)
-            m_local_start = FromTicks(GetPropertyValue<int64>(n, 4));
-        else if (GetPropertyString(n, 0) == sfbxS_LocalStop)
-            m_local_stop = FromTicks(GetPropertyValue<int64>(n, 4));
-        else if (GetPropertyString(n, 0) == sfbxS_ReferenceStart)
-            m_reference_start = FromTicks(GetPropertyValue<int64>(n, 4));
-        else if (GetPropertyString(n, 0) == sfbxS_ReferenceStop)
-            m_reference_stop = FromTicks(GetPropertyValue<int64>(n, 4));
+    EnumerateProperties(getNode(), [this](Node* p) {
+        auto name = GetPropertyString(p, 0);
+        if (name == sfbxS_LocalStart)
+            m_local_start = FromTicks(GetPropertyValue<int64>(p, 4));
+        else if (name == sfbxS_LocalStop)
+            m_local_stop = FromTicks(GetPropertyValue<int64>(p, 4));
+        else if (name == sfbxS_ReferenceStart)
+            m_reference_start = FromTicks(GetPropertyValue<int64>(p, 4));
+        else if (name == sfbxS_ReferenceStop)
+            m_reference_stop = FromTicks(GetPropertyValue<int64>(p, 4));
         });
 }
 

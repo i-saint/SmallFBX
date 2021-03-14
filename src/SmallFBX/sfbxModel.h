@@ -46,6 +46,7 @@ class LightAttribute : public NodeAttribute
 using super = NodeAttribute;
 public:
     ObjectSubClass getSubClass() const override;
+    void importFBXObjects() override;
     void exportFBXObjects() override;
 };
 
@@ -55,6 +56,7 @@ class CameraAttribute : public NodeAttribute
 using super = NodeAttribute;
 public:
     ObjectSubClass getSubClass() const override;
+    void importFBXObjects() override;
     void exportFBXObjects() override;
 };
 
@@ -127,8 +129,6 @@ public:
     void addChild(Object* v) override;
     void eraseChild(Object* v) override;
 
-    NullAttribute* getAttrbute();
-
 protected:
     void exportFBXObjects() override;
 
@@ -143,8 +143,6 @@ public:
     void addChild(Object* v) override;
     void eraseChild(Object* v) override;
 
-    RootAttribute* getAttrbute();
-
 protected:
     void exportFBXObjects() override;
 
@@ -158,8 +156,6 @@ public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
     void eraseChild(Object* v) override;
-
-    LimbNodeAttribute* getAttrbute();
 
 protected:
     void exportFBXObjects() override;
@@ -190,66 +186,94 @@ protected:
 };
 
 
+enum class LightType
+{
+    Point,
+    Directional,
+    Spot,
+};
+
 class Light : public Model
 {
 using super = Model;
+friend class LightAttribute;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
     void eraseChild(Object* v) override;
 
-    LightAttribute* getAttrbute();
+    LightType getLightType() const;
     float3 getColor() const;
     float getIntensity() const;
+    float getInnerAngle() const;
+    float getOuterAngle() const;
 
+    void setLightType(LightType v);
     void setColor(float3 v);
     void setIntensity(float v);
+    void setInnerAngle(float v);
+    void setOuterAngle(float v);
 
 protected:
     void importFBXObjects() override;
     void exportFBXObjects() override;
 
     LightAttribute* m_attr{};
+    LightType m_light_type = LightType::Point;
     float3 m_color = float3::one();
     float m_intensity = 1.0f;
+    float m_inner_angle = 45.0f; // in degree, for spot light
+    float m_outer_angle = 45.0f; // in degree, for spot light
 };
 
+
+enum class CameraType
+{
+    Perspective,
+    Orthographic,
+};
 
 class Camera : public Model
 {
 using super = Model;
+friend class CameraAttribute;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
     void eraseChild(Object* v) override;
 
-    CameraAttribute* getAttrbute();
+    CameraType getCameraType() const;
     float3 getUpVector() const;
-    float getFocalLength() const; // in mm
+    float getFocalLength() const;   // in mm
     float2 getApertureSize() const; // in mm
+    float2 getLensShift() const;    // in mm
     float2 getAspectSize() const;
     float2 getFildOfView() const;
     float getNearPlane() const;
     float getFarPlane() const;
 
+    // there is no setFildOfView() because fov is computed by aperture and focal length.
+    // focal length can be computed by compute_focal_length() in sfbxMath.h
+
+    void setCameraType(CameraType v);
     void setUpVector(float3 v);
-    void setFocalLength(float v); // in mm
-    void setApetrueSize(float2 v); // in mm
+    void setFocalLength(float v);   // in mm
+    void setApetrueSize(float2 v);  // in mm
+    void setLensShift(float2 v);    // in mm
     void setAspectSize(float2 v);
     void setNearPlane(float v);
     void setFarPlane(float v);
-
-    // there is no setFildOfView() because fov is computed by aperture and focal length.
-    // focal length can be computed by compute_focal_length() in sfbxMath.h
 
 protected:
     void importFBXObjects() override;
     void exportFBXObjects() override;
 
     CameraAttribute* m_attr{};
+    CameraType m_camera_type = CameraType::Perspective;
     float3 m_up_vector{ 0.0f, 1.0f, 0.0f };
     float m_focal_length = 50.0f; // in mm
     float2 m_aperture{ 36.0f, 24.0f }; // in mm
+    float2 m_lens_shift{}; // in mm
     float2 m_aspect{ 1920.0f, 1080.0f };
     float m_near_plane = 0.1f;
     float m_far_plane = 1000.0f;
