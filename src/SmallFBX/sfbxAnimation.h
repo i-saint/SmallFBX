@@ -9,15 +9,29 @@ namespace sfbx {
 enum class AnimationKind
 {
     Unknown,
-    Position,       // float3
-    Rotation,       // float3
-    Scale,          // float3
-    Color,          // float3
-    Intensity,      // float
-    FocalLength,    // float
-    DeformWeight,   // float
-    filmboxTypeID,  // int
-    lockInfluenceWeights, // int
+
+    // transform
+    Position,    // float3
+    Rotation,    // float3
+    Scale,       // float3
+
+    // light
+    Color,       // float3
+    Intensity,   // float
+
+    // camera
+    FocalLength, // float
+    FilmWidth,   // float
+    FilmHeight,  // float
+    FilmOffsetX, // float
+    FilmOffsetY, // float
+
+    // blend shape
+    DeformPercent, // float
+
+    // internal
+    filmboxTypeID,
+    lockInfluenceWeights,
 };
 
 class AnimationStack : public Object

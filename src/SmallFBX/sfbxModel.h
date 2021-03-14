@@ -196,7 +196,6 @@ enum class LightType
 class Light : public Model
 {
 using super = Model;
-friend class LightAttribute;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
@@ -215,6 +214,7 @@ public:
     void setOuterAngle(float v);
 
 protected:
+    friend class LightAttribute;
     void importFBXObjects() override;
     void exportFBXObjects() override;
 
@@ -236,19 +236,18 @@ enum class CameraType
 class Camera : public Model
 {
 using super = Model;
-friend class CameraAttribute;
 public:
     ObjectSubClass getSubClass() const override;
     void addChild(Object* v) override;
     void eraseChild(Object* v) override;
 
     CameraType getCameraType() const;
-    float3 getUpVector() const;
     float getFocalLength() const;   // in mm
-    float2 getApertureSize() const; // in mm
-    float2 getLensShift() const;    // in mm
-    float2 getAspectSize() const;
-    float2 getFildOfView() const;
+    float2 getFilmSize() const;     // in mm, aka "aperture" or "sensor"
+    float2 getFilmOffset() const;   // in mm, aka "lens shift" or "sensor shift"
+    float2 getFildOfView() const;   // in degree
+    float2 getAspectSize() const;   // in pixel (screen size)
+    float getAspectRatio() const;
     float getNearPlane() const;
     float getFarPlane() const;
 
@@ -256,24 +255,24 @@ public:
     // focal length can be computed by compute_focal_length() in sfbxMath.h
 
     void setCameraType(CameraType v);
-    void setUpVector(float3 v);
     void setFocalLength(float v);   // in mm
-    void setApetrueSize(float2 v);  // in mm
-    void setLensShift(float2 v);    // in mm
-    void setAspectSize(float2 v);
+    void setFilmSize(float2 v);     // in mm
+    void setFilmShift(float2 v);    // in mm
+    void setAspectSize(float2 v);   // in pixel (screen size)
     void setNearPlane(float v);
     void setFarPlane(float v);
 
 protected:
+    friend class CameraAttribute;
+    friend class AnimationCurveNode;
     void importFBXObjects() override;
     void exportFBXObjects() override;
 
     CameraAttribute* m_attr{};
     CameraType m_camera_type = CameraType::Perspective;
-    float3 m_up_vector{ 0.0f, 1.0f, 0.0f };
     float m_focal_length = 50.0f; // in mm
-    float2 m_aperture{ 36.0f, 24.0f }; // in mm
-    float2 m_lens_shift{}; // in mm
+    float2 m_film_size{ 36.0f, 24.0f }; // in mm
+    float2 m_film_offset{}; // in mm
     float2 m_aspect{ 1920.0f, 1080.0f };
     float m_near_plane = 0.1f;
     float m_far_plane = 1000.0f;

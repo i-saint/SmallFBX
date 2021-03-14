@@ -215,10 +215,18 @@ static const AnimationKindInfo g_akinfo[] = {
     {AnimationKind::Position,     sfbxS_T, sfbxS_LclTranslation, {"d|X", "d|Y", "d|Z"}},
     {AnimationKind::Rotation,     sfbxS_R, sfbxS_LclRotation, {"d|X", "d|Y", "d|Z"}},
     {AnimationKind::Scale,        sfbxS_S, sfbxS_LclScale, {"d|X", "d|Y", "d|Z"}},
+
     {AnimationKind::Color,        sfbxS_Color, sfbxS_Color, {"d|X", "d|Y", "d|Z"}},
     {AnimationKind::Intensity,    sfbxS_Intensity, sfbxS_Intensity, {"d|" sfbxS_Intensity}},
+
     {AnimationKind::FocalLength,  sfbxS_FocalLength, sfbxS_FocalLength, {"d|" sfbxS_FocalLength}},
-    {AnimationKind::DeformWeight, sfbxS_DeformPercent, sfbxS_DeformPercent, {"d|" sfbxS_DeformPercent}},
+    {AnimationKind::FilmWidth,    sfbxS_FilmWidth, sfbxS_FilmWidth, {"d|" sfbxS_FilmWidth}},
+    {AnimationKind::FilmHeight,   sfbxS_FilmHeight, sfbxS_FilmHeight, {"d|" sfbxS_FilmHeight}},
+    {AnimationKind::FilmOffsetX,  sfbxS_FilmOffsetX, sfbxS_FilmOffsetX, {"d|" sfbxS_FilmOffsetX}},
+    {AnimationKind::FilmOffsetY,  sfbxS_FilmOffsetY, sfbxS_FilmOffsetY, {"d|" sfbxS_FilmOffsetY}},
+
+    {AnimationKind::DeformPercent, sfbxS_DeformPercent, sfbxS_DeformPercent, {"d|" sfbxS_DeformPercent}},
+
     {AnimationKind::filmboxTypeID, sfbxS_filmboxTypeID, sfbxS_filmboxTypeID, {"d|" sfbxS_filmboxTypeID}},
     {AnimationKind::lockInfluenceWeights, sfbxS_lockInfluenceWeights, sfbxS_lockInfluenceWeights, {"d|" sfbxS_lockInfluenceWeights}},
 };
@@ -284,10 +292,14 @@ static const AnimationCurveInfo g_acinfo[] = {
     {"d|X", sfbxS_Number, PropertyType::Float64, 0},
     {"d|Y", sfbxS_Number, PropertyType::Float64, 1},
     {"d|Z", sfbxS_Number, PropertyType::Float64, 2},
-    {"d|" sfbxS_Intensity,            sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_FocalLength,          sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_DeformPercent,        sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_filmboxTypeID,        sfbxS_Short,  PropertyType::Int16,   0},
+    {"d|" sfbxS_Intensity,     sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_FocalLength,   sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_FilmWidth,     sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_FilmHeight,    sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_FilmOffsetX,   sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_FilmOffsetY,   sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_DeformPercent, sfbxS_Number, PropertyType::Float64, 0},
+    {"d|" sfbxS_filmboxTypeID, sfbxS_Short,  PropertyType::Int16,   0},
     {"d|" sfbxS_lockInfluenceWeights, sfbxS_Bool,   PropertyType::Int32,   0},
 };
 static const AnimationCurveInfo* FindAnimationCurveInfo(string_view name)
@@ -443,8 +455,20 @@ void AnimationCurveNode::applyAnimation(float time) const
     if (m_curves.empty() || m_kind == AnimationKind::Unknown)
         return;
 
+    auto asLight = [](Object* obj) -> Light* {
+        if (auto attr = as<LightAttribute>(obj))
+            return as<Light>(attr->getParent());
+        return nullptr;
+    };
+    auto asCamera = [](Object* obj) -> Camera* {
+        if (auto attr = as<CameraAttribute>(obj))
+            return as<Camera>(attr->getParent());
+        return nullptr;
+    };
+
     auto* target = getAnimationTarget();
     switch (m_kind) {
+    // transform
     case AnimationKind::Position:
         if (auto* model = as<Model>(target))
             model->setPosition(evaluateF3(time));
@@ -457,25 +481,46 @@ void AnimationCurveNode::applyAnimation(float time) const
         if (auto* model = as<Model>(target))
             model->setScale(evaluateF3(time));
         break;
+
+    // light
     case AnimationKind::Color:
-        if (auto* light = as<Light>(target))
+        if (auto* light = asLight(target))
             light->setColor(evaluateF3(time));
         break;
     case AnimationKind::Intensity:
-        if (auto* light = as<Light>(target))
+        if (auto* light = asLight(target))
             light->setIntensity(evaluateF1(time));
         break;
+
+    // camera
     case AnimationKind::FocalLength:
-        if (auto cam = as<Camera>(target))
-            cam->setFocalLength(evaluateF1(time));
+        if (auto cam = asCamera(target))
+            cam->m_focal_length = evaluateF1(time);
         break;
-    case AnimationKind::DeformWeight:
+    case AnimationKind::FilmWidth:
+        if (auto cam = asCamera(target))
+            cam->m_film_size.x = evaluateF1(time);
+        break;
+    case AnimationKind::FilmHeight:
+        if (auto cam = asCamera(target))
+            cam->m_film_size.y = evaluateF1(time);
+        break;
+    case AnimationKind::FilmOffsetX:
+        if (auto cam = asCamera(target))
+            cam->m_film_offset.x = evaluateF1(time);
+        break;
+    case AnimationKind::FilmOffsetY:
+        if (auto cam = asCamera(target))
+            cam->m_film_offset.y = evaluateF1(time);
+        break;
+
+    // blend shape
+    case AnimationKind::DeformPercent:
         if (auto* bsc = as<BlendShapeChannel>(target))
             bsc->setWeight(evaluateF1(time));
         break;
+
     default:
-        // should not be here
-        sfbxPrint("sfbx::AnimationCurveNode: something wrong\n");
         break;
     }
 }

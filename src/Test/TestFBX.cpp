@@ -147,7 +147,7 @@ testCase(fbxWrite)
             n1->addValue(2.0f, float3{  0.0f, 0.0f, 0.0f });
             n1->addValue(3.0f, float3{-30.0f, 0.0f, 0.0f });
 
-            sfbx::AnimationCurveNode* bsw = layer->createCurveNode(sfbx::AnimationKind::DeformWeight, bschannel);
+            sfbx::AnimationCurveNode* bsw = layer->createCurveNode(sfbx::AnimationKind::DeformPercent, bschannel);
             bsw->addValue(0.0f, 0.0f);
             bsw->addValue(1.5f, 100.0f);
             bsw->addValue(3.0f, 0.0f);

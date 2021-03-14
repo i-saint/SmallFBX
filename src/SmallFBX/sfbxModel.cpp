@@ -6,37 +6,11 @@
 
 namespace sfbx {
 
-ObjectClass NodeAttribute::getClass() const
-{
-    return ObjectClass::NodeAttribute;
-}
-
+ObjectClass NodeAttribute::getClass() const { return ObjectClass::NodeAttribute; }
 ObjectSubClass NullAttribute::getSubClass() const { return ObjectSubClass::Null; }
-
-void NullAttribute::exportFBXObjects()
-{
-    super::exportFBXObjects();
-    getNode()->createChild(sfbxS_TypeFlags, sfbxS_Null);
-}
-
 ObjectSubClass RootAttribute::getSubClass() const { return ObjectSubClass::Root; }
-
-void RootAttribute::exportFBXObjects()
-{
-    super::exportFBXObjects();
-    getNode()->createChild(sfbxS_TypeFlags, sfbxS_Null, sfbxS_Skeleton, sfbxS_Root);
-}
-
 ObjectSubClass LimbNodeAttribute::getSubClass() const { return ObjectSubClass::LimbNode; }
-
-void LimbNodeAttribute::exportFBXObjects()
-{
-    super::exportFBXObjects();
-    getNode()->createChild(sfbxS_TypeFlags, sfbxS_Skeleton);
-}
-
 ObjectSubClass LightAttribute::getSubClass() const { return ObjectSubClass::Light; }
-
 ObjectSubClass CameraAttribute::getSubClass() const { return ObjectSubClass::Camera; }
 
 
@@ -261,6 +235,12 @@ void Null::exportFBXObjects()
     super::exportFBXObjects();
 }
 
+void NullAttribute::exportFBXObjects()
+{
+    super::exportFBXObjects();
+    getNode()->createChild(sfbxS_TypeFlags, sfbxS_Null);
+}
+
 void Null::addChild(Object* v)
 {
     super::addChild(v);
@@ -284,6 +264,12 @@ void Root::exportFBXObjects()
     if (!m_attr)
         m_attr = createChild<RootAttribute>();
     super::exportFBXObjects();
+}
+
+void RootAttribute::exportFBXObjects()
+{
+    super::exportFBXObjects();
+    getNode()->createChild(sfbxS_TypeFlags, sfbxS_Null, sfbxS_Skeleton, sfbxS_Root);
 }
 
 void Root::addChild(Object* v)
@@ -311,6 +297,11 @@ void LimbNode::exportFBXObjects()
     super::exportFBXObjects();
 }
 
+void LimbNodeAttribute::exportFBXObjects()
+{
+    super::exportFBXObjects();
+    getNode()->createChild(sfbxS_TypeFlags, sfbxS_Skeleton);
+}
 
 void LimbNode::addChild(Object* v)
 {
@@ -485,13 +476,13 @@ void CameraAttribute::importFBXObjects()
         else if (name == sfbxS_FocalLength)
             cam->m_focal_length = (float32)GetPropertyValue<float64>(p, 4);
         else if (name == sfbxS_FilmWidth)
-            cam->m_aperture.x = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
+            cam->m_film_size.x = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
         else if (name == sfbxS_FilmHeight)
-            cam->m_aperture.y = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
+            cam->m_film_size.y = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
         else if (name == sfbxS_FilmOffsetX)
-            cam->m_lens_shift.x = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
+            cam->m_film_offset.x = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
         else if (name == sfbxS_FilmOffsetY)
-            cam->m_lens_shift.y = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
+            cam->m_film_offset.y = (float32)GetPropertyValue<float64>(p, 4) * InchToMillimeter;
         else if (name == sfbxS_NearPlane)
             cam->m_near_plane = (float32)GetPropertyValue<float64>(p, 4);
         else if (name == sfbxS_FarPlane)
@@ -517,12 +508,12 @@ void CameraAttribute::exportFBXObjects()
     auto props = getNode()->createChild(sfbxS_Properties70);
     props->createChild(sfbxS_P, sfbxS_CameraProjectionType, sfbxS_enum, "", "", (int32)cam->m_camera_type);
     props->createChild(sfbxS_P, sfbxS_FocalLength, sfbxS_Number, "", "A", (float64)cam->m_focal_length);
-    props->createChild(sfbxS_P, sfbxS_FilmWidth, sfbxS_Number, "", "A", (float64)cam->m_aperture.x * MillimeterToInch);
-    props->createChild(sfbxS_P, sfbxS_FilmHeight, sfbxS_Number, "", "A", (float64)cam->m_aperture.y * MillimeterToInch);
-    if (cam->m_lens_shift.x != 0.0f)
-        props->createChild(sfbxS_P, sfbxS_FilmOffsetX, sfbxS_Number, "", "A", (float64)cam->m_lens_shift.x * MillimeterToInch);
-    if (cam->m_lens_shift.y != 0.0f)
-        props->createChild(sfbxS_P, sfbxS_FilmOffsetY, sfbxS_Number, "", "A", (float64)cam->m_lens_shift.y * MillimeterToInch);
+    props->createChild(sfbxS_P, sfbxS_FilmWidth, sfbxS_Number, "", "A", (float64)cam->m_film_size.x * MillimeterToInch);
+    props->createChild(sfbxS_P, sfbxS_FilmHeight, sfbxS_Number, "", "A", (float64)cam->m_film_size.y * MillimeterToInch);
+    if (cam->m_film_offset.x != 0.0f)
+        props->createChild(sfbxS_P, sfbxS_FilmOffsetX, sfbxS_Number, "", "A", (float64)cam->m_film_offset.x * MillimeterToInch);
+    if (cam->m_film_offset.y != 0.0f)
+        props->createChild(sfbxS_P, sfbxS_FilmOffsetY, sfbxS_Number, "", "A", (float64)cam->m_film_offset.y * MillimeterToInch);
     props->createChild(sfbxS_P, sfbxS_NearPlane, sfbxS_Number, "", "A", (float64)cam->m_near_plane);
     props->createChild(sfbxS_P, sfbxS_FarPlane, sfbxS_Number, "", "A", (float64)cam->m_far_plane);
 }
@@ -542,27 +533,31 @@ void Camera::eraseChild(Object* v)
 }
 
 CameraType Camera::getCameraType() const { return m_camera_type; }
-float3 Camera::getUpVector() const { return m_up_vector; }
 float Camera::getFocalLength() const { return m_focal_length; }
-float2 Camera::getApertureSize() const { return m_aperture; }
-float2 Camera::getLensShift() const { return m_lens_shift; }
-float2 Camera::getAspectSize() const { return m_aspect; }
+float2 Camera::getFilmSize() const { return m_film_size; }
+float2 Camera::getFilmOffset() const { return m_film_offset; }
 float2 Camera::getFildOfView() const
 {
     return float2{
-        compute_fov(m_aperture.x, m_focal_length),
-        compute_fov(m_aperture.y, m_focal_length),
+        compute_fov(m_film_size.x, m_focal_length),
+        compute_fov(m_film_size.y, m_focal_length),
     };
 }
+
+float2 Camera::getAspectSize() const { return m_aspect; }
+float Camera::getAspectRatio() const
+{
+    return m_film_size.x / m_film_size.y;
+}
+
 float Camera::getNearPlane() const { return m_near_plane; }
 float Camera::getFarPlane() const { return m_far_plane; }
 
 
 void Camera::setCameraType(CameraType v) { m_camera_type = v; }
-void Camera::setUpVector(float3 v) { m_up_vector = v; }
 void Camera::setFocalLength(float v) { m_focal_length = v; }
-void Camera::setApetrueSize(float2 v) { m_aperture = v; }
-void Camera::setLensShift(float2 v) { m_lens_shift = v; }
+void Camera::setFilmSize(float2 v) { m_film_size = v; }
+void Camera::setFilmShift(float2 v) { m_film_offset = v; }
 void Camera::setAspectSize(float2 v) { m_aspect = v; }
 void Camera::setNearPlane(float v) { m_near_plane = v; }
 void Camera::setFarPlane(float v) { m_far_plane = v; }
