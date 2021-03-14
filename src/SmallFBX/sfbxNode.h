@@ -18,6 +18,7 @@ public:
     bool isRoot() const;
 
     void setName(string_view v);
+    void setForceNullTerminate(bool v);
 
     void reserveProperties(size_t v);
     Property* createProperty();
@@ -57,6 +58,7 @@ private:
 
     Node* m_parent{};
     std::vector<Node*> m_children;
+    bool m_force_null_terminate = false;
 };
 
 } // namespace sfbx

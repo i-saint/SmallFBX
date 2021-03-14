@@ -184,6 +184,10 @@ void Object::exportFBXObjects()
     auto objects = m_document->findNode(sfbxS_Objects);
     m_node = objects->createChild(
         GetObjectClassName(getClass()), m_id, getFullName(), GetObjectSubClassName(getSubClass()));
+
+    // FBX SDK seems to require the object node to always null-terminated.
+    // (Blender seems not to require this, though)
+    m_node->setForceNullTerminate(true);
 }
 
 void Object::exportFBXConnections()

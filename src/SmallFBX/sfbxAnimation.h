@@ -14,8 +14,8 @@ enum class AnimationKind
     Scale,          // float3
     DeformWeight,   // float
     FocalLength,    // float
-    filmboxTypeID,  // int16
-    lockInfluenceWeights, // int32
+    filmboxTypeID,  // int
+    lockInfluenceWeights, // int
 };
 
 class AnimationStack : public Object

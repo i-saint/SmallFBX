@@ -70,7 +70,7 @@ uint64_t Node::write(std::ostream& os, uint64_t start_offset)
 
     uint64_t property_size = 0;
     uint64_t children_size = 0;
-    bool null_terminate = !m_children.empty() || m_properties.empty();
+    bool null_terminate = !m_children.empty() || m_properties.empty() || m_force_null_terminate;
     {
         CounterStream cs;
         for (auto& prop : m_properties)
@@ -125,6 +125,11 @@ bool Node::isRoot() const
 void Node::setName(string_view v)
 {
     m_name = v;
+}
+
+void Node::setForceNullTerminate(bool v)
+{
+    m_force_null_terminate = v;
 }
 
 void Node::reserveProperties(size_t v)
