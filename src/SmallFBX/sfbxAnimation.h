@@ -116,7 +116,6 @@ public:
     // apply evaluated value to target
     void applyAnimation(float time) const;
 
-    void initialize(AnimationKind kind, Object* target);
     void addValue(float time, float value);
     void addValue(float time, float3 value);
 
@@ -124,17 +123,27 @@ public:
     void unlink();
 
 protected:
+    friend class AnimationLayer;
     void importFBXObjects() override;
     void exportFBXObjects() override;
     void exportFBXConnections() override;
+    void setup(AnimationKind kind, Object* target, bool create_curves);
 
     AnimationKind m_kind = AnimationKind::Unknown;
     std::vector<AnimationCurve*> m_curves;
 
     union {
+        Object* object;
+        Model* model;
+        Light* light;
+        Camera* camera;
+        BlendShapeChannel* bs_channel;
+    } m_target{};
+
+    union {
         float3 f3;
         int i;
-    } m_default_value;
+    } m_default_value{};
 };
 
 

@@ -166,7 +166,7 @@ span<AnimationCurveNode*> AnimationLayer::getAnimationCurveNodes() const
 AnimationCurveNode* AnimationLayer::createCurveNode(AnimationKind kind, Object* target)
 {
     auto ret = createChild<AnimationCurveNode>();
-    ret->initialize(kind, target);
+    ret->setup(kind, target, true);
     return ret;
 }
 
@@ -319,7 +319,8 @@ void AnimationCurveNode::importFBXObjects()
 
     auto name = getName();
     if (auto aki = FindAnimationKindInfo(name)) {
-        m_kind = aki->kind;
+        setup(aki->kind, getAnimationTarget(), false);
+
         EnumerateProperties(getNode(), [this](Node* p) {
             auto link_name = GetPropertyString(p);
             if (auto aci = FindAnimationCurveInfo(link_name))
@@ -455,69 +456,46 @@ void AnimationCurveNode::applyAnimation(float time) const
     if (m_curves.empty() || m_kind == AnimationKind::Unknown)
         return;
 
-    auto asLight = [](Object* obj) -> Light* {
-        if (auto attr = as<LightAttribute>(obj))
-            return as<Light>(attr->getParent());
-        return nullptr;
-    };
-    auto asCamera = [](Object* obj) -> Camera* {
-        if (auto attr = as<CameraAttribute>(obj))
-            return as<Camera>(attr->getParent());
-        return nullptr;
-    };
-
-    auto* target = getAnimationTarget();
     switch (m_kind) {
     // transform
     case AnimationKind::Position:
-        if (auto* model = as<Model>(target))
-            model->setPosition(evaluateF3(time));
+        m_target.model->setPosition(evaluateF3(time));
         break;
     case AnimationKind::Rotation:
-        if (auto* model = as<Model>(target))
-            model->setRotation(evaluateF3(time));
+        m_target.model->setRotation(evaluateF3(time));
         break;
     case AnimationKind::Scale:
-        if (auto* model = as<Model>(target))
-            model->setScale(evaluateF3(time));
+        m_target.model->setScale(evaluateF3(time));
         break;
 
     // light
     case AnimationKind::Color:
-        if (auto* light = asLight(target))
-            light->setColor(evaluateF3(time));
+        m_target.light->setColor(evaluateF3(time));
         break;
     case AnimationKind::Intensity:
-        if (auto* light = asLight(target))
-            light->setIntensity(evaluateF1(time));
+        m_target.light->setIntensity(evaluateF1(time));
         break;
 
     // camera
     case AnimationKind::FocalLength:
-        if (auto cam = asCamera(target))
-            cam->m_focal_length = evaluateF1(time);
+        m_target.camera->m_focal_length = evaluateF1(time);
         break;
     case AnimationKind::FilmWidth:
-        if (auto cam = asCamera(target))
-            cam->m_film_size.x = evaluateF1(time);
+        m_target.camera->m_film_size.x = evaluateF1(time);
         break;
     case AnimationKind::FilmHeight:
-        if (auto cam = asCamera(target))
-            cam->m_film_size.y = evaluateF1(time);
+        m_target.camera->m_film_size.y = evaluateF1(time);
         break;
     case AnimationKind::FilmOffsetX:
-        if (auto cam = asCamera(target))
-            cam->m_film_offset.x = evaluateF1(time);
+        m_target.camera->m_film_offset.x = evaluateF1(time);
         break;
     case AnimationKind::FilmOffsetY:
-        if (auto cam = asCamera(target))
-            cam->m_film_offset.y = evaluateF1(time);
+        m_target.camera->m_film_offset.y = evaluateF1(time);
         break;
 
     // blend shape
     case AnimationKind::DeformPercent:
-        if (auto* bsc = as<BlendShapeChannel>(target))
-            bsc->setWeight(evaluateF1(time));
+        m_target.bs_channel->setWeight(evaluateF1(time));
         break;
 
     default:
@@ -525,14 +503,36 @@ void AnimationCurveNode::applyAnimation(float time) const
     }
 }
 
-void AnimationCurveNode::initialize(AnimationKind kind, Object* target)
+void AnimationCurveNode::setup(AnimationKind kind, Object* target, bool create_curves)
 {
-    m_kind = kind;
-    if (target)
-        target->addChild(this);
+    m_target.object = nullptr;
+    if (kind >= AnimationKind::Position && kind <= AnimationKind::Scale) {
+        m_target.model = as<Model>(target);
+    }
+    else if (kind >= AnimationKind::Color && kind <= AnimationKind::Intensity) {
+        if (auto attr = as<LightAttribute>(target))
+            m_target.light = as<Light>(attr->getParent());
+    }
+    else if (kind >= AnimationKind::FocalLength && kind <= AnimationKind::FilmOffsetY) {
+        if (auto attr = as<CameraAttribute>(target))
+            m_target.camera = as<Camera>(attr->getParent());
+    }
+    else if (kind == AnimationKind::DeformPercent) {
+        m_target.bs_channel = as<BlendShapeChannel>(target);
+    }
 
-    if (auto* acd = FindAnimationKindInfo(m_kind)) {
-        setName(acd->object_name);
+    auto* acd = FindAnimationKindInfo(kind);
+    if (!m_target.object || !acd)
+        return;
+
+    // assume target objects won't be erased or changed except remap().
+    // if we break this assumption, we need m_target.object->weak_from_this().
+
+    m_kind = kind;
+    setName(acd->object_name);
+    target->addChild(this);
+
+    if (create_curves) {
         for (auto& link_name : acd->curve_names) {
             auto curve = m_document->createObject<AnimationCurve>();
             addChild(curve, link_name);
@@ -569,6 +569,7 @@ bool AnimationCurveNode::remap(Document* doc)
             if (auto np = doc->findObject(p->getFullName())) {
                 p->eraseChild(this); // erase p from m_parents. so, this loop is invalidated
                 np->addChild(this);
+                setup(m_kind, np, false);
                 return true;
             }
         }

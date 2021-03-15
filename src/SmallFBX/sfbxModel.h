@@ -5,6 +5,8 @@ namespace sfbx {
 
 // NodeAttribute and its subclasses:
 //  (NullAttribute, RootAttribute, LimbNodeAttribute, LightAttribute, CameraAttribute)
+// 
+// these are for internal use. users do not need to care about them.
 
 class NodeAttribute : public Object
 {
@@ -12,7 +14,6 @@ using super = Object;
 public:
     ObjectClass getClass() const override;
 };
-
 
 class NullAttribute : public NodeAttribute
 {
@@ -22,7 +23,6 @@ public:
     void exportFBXObjects() override;
 };
 
-
 class RootAttribute : public NodeAttribute
 {
 using super = NodeAttribute;
@@ -30,7 +30,6 @@ public:
     ObjectSubClass getSubClass() const override;
     void exportFBXObjects() override;
 };
-
 
 class LimbNodeAttribute : public NodeAttribute
 {
@@ -40,7 +39,6 @@ public:
     void exportFBXObjects() override;
 };
 
-
 class LightAttribute : public NodeAttribute
 {
 using super = NodeAttribute;
@@ -49,7 +47,6 @@ public:
     void importFBXObjects() override;
     void exportFBXObjects() override;
 };
-
 
 class CameraAttribute : public NodeAttribute
 {
@@ -204,8 +201,8 @@ public:
     LightType getLightType() const;
     float3 getColor() const;
     float getIntensity() const;
-    float getInnerAngle() const;
-    float getOuterAngle() const;
+    float getInnerAngle() const; // in degree, for spot light
+    float getOuterAngle() const; // in degree, for spot light
 
     void setLightType(LightType v);
     void setColor(float3 v);
@@ -222,8 +219,8 @@ protected:
     LightType m_light_type = LightType::Point;
     float3 m_color = float3::one();
     float m_intensity = 1.0f;
-    float m_inner_angle = 45.0f; // in degree, for spot light
-    float m_outer_angle = 45.0f; // in degree, for spot light
+    float m_inner_angle = 45.0f;
+    float m_outer_angle = 45.0f;
 };
 
 
@@ -252,7 +249,7 @@ public:
     float getFarPlane() const;
 
     // there is no setFildOfView() because fov is computed by aperture and focal length.
-    // focal length can be computed by compute_focal_length() in sfbxMath.h
+    // focal length can be computed by compute_focal_length() in sfbxMath.h with fov and aperture.
 
     void setCameraType(CameraType v);
     void setFocalLength(float v);   // in mm
