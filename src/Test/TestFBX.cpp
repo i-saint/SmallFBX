@@ -147,9 +147,9 @@ testCase(fbxWrite)
             n1->addValue(2.0f, float3{  0.0f, 0.0f, 0.0f });
             n1->addValue(3.0f, float3{-30.0f, 0.0f, 0.0f });
 
-            sfbx::AnimationCurveNode* bsw = layer->createCurveNode(sfbx::AnimationKind::DeformPercent, bschannel);
+            sfbx::AnimationCurveNode* bsw = layer->createCurveNode(sfbx::AnimationKind::DeformWeight, bschannel);
             bsw->addValue(0.0f, 0.0f);
-            bsw->addValue(1.5f, 100.0f);
+            bsw->addValue(1.5f, 1.0f);
             bsw->addValue(3.0f, 0.0f);
 
             doc->setCurrentTake(take);
@@ -276,7 +276,7 @@ testCase(fbxAnimationCurve)
     float times[]{ 0.0f, 1.0f, 2.0f };
     float values[]{ 0.0f, 100.0f, 400.0f };
     curve->setTimes(times);
-    curve->setValues(values);
+    curve->setRawValues(values);
 
     for (float t = -0.5f; t < 2.5f; t += 0.1f) {
         printf("time: %f, value: %f\n", t, curve->evaluate(t));

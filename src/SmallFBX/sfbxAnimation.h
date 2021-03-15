@@ -20,14 +20,14 @@ enum class AnimationKind
     Intensity,   // float
 
     // camera
-    FocalLength, // float
-    FilmWidth,   // float
-    FilmHeight,  // float
-    FilmOffsetX, // float
-    FilmOffsetY, // float
+    FocalLength, // float, in mm
+    FilmWidth,   // float, in mm (unit converted. raw value is inch)
+    FilmHeight,  // float, in mm (unit converted. raw value is inch)
+    FilmOffsetX, // float, in mm (unit converted. raw value is inch)
+    FilmOffsetY, // float, in mm (unit converted. raw value is inch)
 
     // blend shape
-    DeformPercent, // float
+    DeformWeight, // float, 0.0-1.0 (unit converted. raw value is percent)
 
     // internal
     filmboxTypeID,
@@ -154,20 +154,24 @@ friend class AnimationCurveNode;
 public:
     ObjectClass getClass() const override;
 
+    float getUnitConversion() const;
     span<float> getTimes() const;
-    span<float> getValues() const;
+    span<float> getRawValues() const; // get values without unit conversion
     float getStartTime() const;
     float getStopTime() const;
     float evaluate(float time) const;
 
+    void setUnitConversion(float v); // conversion coefficient applied when *getting* values
     void setTimes(span<float> v);
-    void setValues(span<float> v);
+    void setRawValues(span<float> v); // set values without unit conversion
     void addValue(float time, float value);
 
 protected:
     void importFBXObjects() override;
     void exportFBXObjects() override;
     void exportFBXConnections() override;
+    void setLinkName(string_view v);
+    void setElementIndex(int v);
 
     float m_default{};
     RawVector<float> m_times;
@@ -175,6 +179,8 @@ protected:
 
     std::string m_link_name;
     int m_element_index{};
+    float m_unit_conversion = 1.0f;
+    float m_unit_conversion_rcp = 1.0f;
 };
 
 } // namespace sfbx

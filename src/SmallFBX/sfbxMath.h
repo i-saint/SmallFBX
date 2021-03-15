@@ -9,6 +9,8 @@ constexpr float DegToRad = PI / 180.0f;
 constexpr float RadToDeg = 1.0f / (PI / 180.0f);
 constexpr float InchToMillimeter = 25.4f;
 constexpr float MillimeterToInch = 1.0f / 25.4f;
+constexpr float PercentToWeight = 1.0f / 100.0f;
+constexpr float WeightToPercent = 100.0f;
 
 template<class T> inline tvec2<T> operator-(const tvec2<T>& v) { return{ -v.x, -v.y }; }
 template<class T, class U> inline tvec2<T> operator+(const tvec2<T>& l, const tvec2<U>& r) { return{ l.x + r.x, l.y + r.y }; }

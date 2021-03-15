@@ -146,8 +146,8 @@ public:
 
     float getWeight() const;
     span<ShapeData> getShapeData() const;
-    // weight: 0.0f - 100.0f
-    void addShape(Shape* shape, float weight = 100.0f);
+    // weight: 0.0f - 1.0f
+    void addShape(Shape* shape, float weight = 1.0f);
 
     void setWeight(float v);
     void deformPoints(span<float3> dst) const;

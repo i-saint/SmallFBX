@@ -225,7 +225,7 @@ static const AnimationKindInfo g_akinfo[] = {
     {AnimationKind::FilmOffsetX,  sfbxS_FilmOffsetX, sfbxS_FilmOffsetX, {"d|" sfbxS_FilmOffsetX}},
     {AnimationKind::FilmOffsetY,  sfbxS_FilmOffsetY, sfbxS_FilmOffsetY, {"d|" sfbxS_FilmOffsetY}},
 
-    {AnimationKind::DeformPercent, sfbxS_DeformPercent, sfbxS_DeformPercent, {"d|" sfbxS_DeformPercent}},
+    {AnimationKind::DeformWeight, sfbxS_DeformPercent, sfbxS_DeformPercent, {"d|" sfbxS_DeformPercent}},
 
     {AnimationKind::filmboxTypeID, sfbxS_filmboxTypeID, sfbxS_filmboxTypeID, {"d|" sfbxS_filmboxTypeID}},
     {AnimationKind::lockInfluenceWeights, sfbxS_lockInfluenceWeights, sfbxS_lockInfluenceWeights, {"d|" sfbxS_lockInfluenceWeights}},
@@ -252,6 +252,7 @@ struct AnimationCurveInfo
     string_view fbx_typename;
     PropertyType type;
     int element_index;
+    float unit_conversion;
 
     void parseDefaultValueNode(Node* p, void* dst) const
     {
@@ -289,18 +290,18 @@ struct AnimationCurveInfo
 };
 
 static const AnimationCurveInfo g_acinfo[] = {
-    {"d|X", sfbxS_Number, PropertyType::Float64, 0},
-    {"d|Y", sfbxS_Number, PropertyType::Float64, 1},
-    {"d|Z", sfbxS_Number, PropertyType::Float64, 2},
-    {"d|" sfbxS_Intensity,     sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_FocalLength,   sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_FilmWidth,     sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_FilmHeight,    sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_FilmOffsetX,   sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_FilmOffsetY,   sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_DeformPercent, sfbxS_Number, PropertyType::Float64, 0},
-    {"d|" sfbxS_filmboxTypeID, sfbxS_Short,  PropertyType::Int16,   0},
-    {"d|" sfbxS_lockInfluenceWeights, sfbxS_Bool,   PropertyType::Int32,   0},
+    {"d|X", sfbxS_Number, PropertyType::Float64, 0, 1.0f},
+    {"d|Y", sfbxS_Number, PropertyType::Float64, 1, 1.0f},
+    {"d|Z", sfbxS_Number, PropertyType::Float64, 2, 1.0f},
+    {"d|" sfbxS_Intensity,     sfbxS_Number, PropertyType::Float64, 0, 1.0f},
+    {"d|" sfbxS_FocalLength,   sfbxS_Number, PropertyType::Float64, 0, 1.0f},
+    {"d|" sfbxS_FilmWidth,     sfbxS_Number, PropertyType::Float64, 0, InchToMillimeter},
+    {"d|" sfbxS_FilmHeight,    sfbxS_Number, PropertyType::Float64, 0, InchToMillimeter},
+    {"d|" sfbxS_FilmOffsetX,   sfbxS_Number, PropertyType::Float64, 0, InchToMillimeter},
+    {"d|" sfbxS_FilmOffsetY,   sfbxS_Number, PropertyType::Float64, 0, InchToMillimeter},
+    {"d|" sfbxS_DeformPercent, sfbxS_Number, PropertyType::Float64, 0, PercentToWeight},
+    {"d|" sfbxS_filmboxTypeID, sfbxS_Short,  PropertyType::Int16,   0, 1.0f},
+    {"d|" sfbxS_lockInfluenceWeights, sfbxS_Bool, PropertyType::Int32, 0, 1.0f},
 };
 static const AnimationCurveInfo* FindAnimationCurveInfo(string_view name)
 {
@@ -372,8 +373,9 @@ void AnimationCurveNode::addChild(Object* v, string_view p)
     super::addChild(v, p);
     if (auto curve = as<AnimationCurve>(v)) {
         if (auto acd = FindAnimationCurveInfo(p)) {
-            curve->m_link_name = p;
-            curve->m_element_index = acd->element_index;
+            curve->setLinkName(p);
+            curve->setElementIndex(acd->element_index);
+            curve->setUnitConversion(acd->unit_conversion);
         }
     }
 }
@@ -481,20 +483,20 @@ void AnimationCurveNode::applyAnimation(float time) const
         m_target.camera->m_focal_length = evaluateF1(time);
         break;
     case AnimationKind::FilmWidth:
-        m_target.camera->m_film_size.x = evaluateF1(time) * InchToMillimeter;
+        m_target.camera->m_film_size.x = evaluateF1(time);
         break;
     case AnimationKind::FilmHeight:
-        m_target.camera->m_film_size.y = evaluateF1(time) * InchToMillimeter;
+        m_target.camera->m_film_size.y = evaluateF1(time);
         break;
     case AnimationKind::FilmOffsetX:
-        m_target.camera->m_film_offset.x = evaluateF1(time) * InchToMillimeter;
+        m_target.camera->m_film_offset.x = evaluateF1(time);
         break;
     case AnimationKind::FilmOffsetY:
-        m_target.camera->m_film_offset.y = evaluateF1(time) * InchToMillimeter;
+        m_target.camera->m_film_offset.y = evaluateF1(time);
         break;
 
     // blend shape
-    case AnimationKind::DeformPercent:
+    case AnimationKind::DeformWeight:
         m_target.bs_channel->setWeight(evaluateF1(time));
         break;
 
@@ -505,28 +507,29 @@ void AnimationCurveNode::applyAnimation(float time) const
 
 void AnimationCurveNode::setup(AnimationKind kind, Object* target, bool create_curves)
 {
+    // cache typed target object.
+    // assume target objects won't be erased or changed except remap().
+    // if we break this assumption, we need m_target.object->weak_from_this().
+
     m_target.object = nullptr;
-    if (kind >= AnimationKind::Position && kind <= AnimationKind::Scale) {
+    if (kind >= AnimationKind::Position && kind <= AnimationKind::Scale) { // transform
         m_target.model = as<Model>(target);
     }
-    else if (kind >= AnimationKind::Color && kind <= AnimationKind::Intensity) {
+    else if (kind >= AnimationKind::Color && kind <= AnimationKind::Intensity) { // light
         if (auto attr = as<LightAttribute>(target))
             m_target.light = as<Light>(attr->getParent());
     }
-    else if (kind >= AnimationKind::FocalLength && kind <= AnimationKind::FilmOffsetY) {
+    else if (kind >= AnimationKind::FocalLength && kind <= AnimationKind::FilmOffsetY) { // camera
         if (auto attr = as<CameraAttribute>(target))
             m_target.camera = as<Camera>(attr->getParent());
     }
-    else if (kind == AnimationKind::DeformPercent) {
+    else if (kind == AnimationKind::DeformWeight) { // blend shape channel
         m_target.bs_channel = as<BlendShapeChannel>(target);
     }
 
     auto* acd = FindAnimationKindInfo(kind);
     if (!m_target.object || !acd)
         return;
-
-    // assume target objects won't be erased or changed except remap().
-    // if we break this assumption, we need m_target.object->weak_from_this().
 
     m_kind = kind;
     setName(acd->object_name);
@@ -639,20 +642,22 @@ void AnimationCurve::exportFBXConnections()
     // do nothing
 }
 
+float AnimationCurve::getUnitConversion() const { return m_unit_conversion; }
 span<float> AnimationCurve::getTimes() const { return make_span(m_times); }
-span<float> AnimationCurve::getValues() const { return make_span(m_values); }
+span<float> AnimationCurve::getRawValues() const { return make_span(m_values); }
 
 float AnimationCurve::getStartTime() const { return m_times.empty() ? 0.0f : m_times.front(); }
 float AnimationCurve::getStopTime() const { return m_times.empty() ? 0.0f : m_times.back(); }
 
 float AnimationCurve::evaluate(float time) const
 {
+    float r;
     if (m_times.empty())
-        return m_default;
+        r = m_default;
     else if (time <= m_times.front())
-        return m_values.front();
+        r = m_values.front();
     else if (time >= m_times.back())
-        return m_values.back();
+        r = m_values.back();
     else {
         // lerp
         auto it = std::lower_bound(m_times.begin(), m_times.end(), time);
@@ -660,23 +665,34 @@ float AnimationCurve::evaluate(float time) const
 
         float t2 = m_times[i];
         float v2 = m_values[i];
-        if (time == t2)
-            return v2;
-
-        float t1 = m_times[i - 1];
-        float v1 = m_values[i - 1];
-        float w = (time - t1) / (t2 - t1);
-        return v1 + (v2 - v1) * w;
+        if (time == t2) {
+            r = v2;
+        }
+        else {
+            float t1 = m_times[i - 1];
+            float v1 = m_values[i - 1];
+            float w = (time - t1) / (t2 - t1);
+            r = v1 + (v2 - v1) * w;
+        }
     }
+    return r * m_unit_conversion;
+}
+
+void AnimationCurve::setUnitConversion(float v)
+{
+    m_unit_conversion = v;
+    m_unit_conversion_rcp = 1.0f / v;
 }
 
 void AnimationCurve::setTimes(span<float> v) { m_times = v; }
-void AnimationCurve::setValues(span<float> v) { m_values = v; }
+void AnimationCurve::setRawValues(span<float> v) { m_values = v; }
+void AnimationCurve::setLinkName(string_view v) { m_link_name = v; }
+void AnimationCurve::setElementIndex(int v) { m_element_index = v; }
 
 void AnimationCurve::addValue(float time, float value)
 {
     m_times.push_back(time);
-    m_values.push_back(value);
+    m_values.push_back(value * m_unit_conversion_rcp);
 }
 
 } // namespace sfbx

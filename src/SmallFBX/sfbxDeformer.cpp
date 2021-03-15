@@ -341,7 +341,7 @@ void BlendShapeChannel::importFBXObjects()
 
     for (auto c : getChildren()) {
         if (auto shape = as<Shape>(c))
-            m_shape_data.push_back({ shape, 100.0f });
+            m_shape_data.push_back({ shape, 1.0f });
     }
     if (auto n = getNode()->findChild(sfbxS_FullWeights)) {
         RawVector<float> weights;
@@ -349,7 +349,7 @@ void BlendShapeChannel::importFBXObjects()
         if (weights.size() == m_shape_data.size()) {
             size_t n = weights.size();
             for (size_t i = 0; i < n; ++i)
-                m_shape_data[i].weight = weights[i];
+                m_shape_data[i].weight = weights[i] * PercentToWeight;
         }
     }
 }
@@ -365,7 +365,7 @@ void BlendShapeChannel::exportFBXObjects()
         auto full_weights = n->createChild(sfbxS_FullWeights);
         auto* dst = full_weights->createProperty()->allocateArray<float64>(m_shape_data.size()).data();
         for (auto& data : m_shape_data)
-            *dst++ = float64(data.weight);
+            *dst++ = float64(data.weight * WeightToPercent);
     }
 }
 
