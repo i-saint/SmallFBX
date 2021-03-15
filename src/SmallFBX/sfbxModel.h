@@ -81,6 +81,7 @@ public:
     float3 getScale() const;
     float4x4 getLocalMatrix() const;
     float4x4 getGlobalMatrix() const;
+    std::string getPath() const;
 
     void setVisibility(bool v);
     void setRotationOrder(RotationOrder v);

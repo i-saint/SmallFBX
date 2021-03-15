@@ -481,16 +481,16 @@ void AnimationCurveNode::applyAnimation(float time) const
         m_target.camera->m_focal_length = evaluateF1(time);
         break;
     case AnimationKind::FilmWidth:
-        m_target.camera->m_film_size.x = evaluateF1(time);
+        m_target.camera->m_film_size.x = evaluateF1(time) * InchToMillimeter;
         break;
     case AnimationKind::FilmHeight:
-        m_target.camera->m_film_size.y = evaluateF1(time);
+        m_target.camera->m_film_size.y = evaluateF1(time) * InchToMillimeter;
         break;
     case AnimationKind::FilmOffsetX:
-        m_target.camera->m_film_offset.x = evaluateF1(time);
+        m_target.camera->m_film_offset.x = evaluateF1(time) * InchToMillimeter;
         break;
     case AnimationKind::FilmOffsetY:
-        m_target.camera->m_film_offset.y = evaluateF1(time);
+        m_target.camera->m_film_offset.y = evaluateF1(time) * InchToMillimeter;
         break;
 
     // blend shape

@@ -203,6 +203,19 @@ float4x4 Model::getGlobalMatrix() const
     return m_matrix_global;
 }
 
+std::string Model::getPath() const
+{
+    if (m_id == 0)
+        return{};
+
+    std::string ret;
+    if (m_parent_model)
+        ret += m_parent_model->getPath();
+    ret += "/";
+    ret += getName();
+    return ret;
+}
+
 void Model::setVisibility(bool v) { m_visibility = v; }
 void Model::setRotationOrder(RotationOrder v) { m_rotation_order = v; }
 
