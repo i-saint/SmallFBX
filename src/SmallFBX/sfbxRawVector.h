@@ -1,5 +1,5 @@
 #pragma once
-
+#include <cstring>
 #include "sfbxTypes.h"
 
 namespace sfbx {
