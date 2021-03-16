@@ -9,34 +9,44 @@ namespace sfbx {
 
 bool Escape(std::string& v)
 {
-    bool ret = false;
-    for (char c : v) {
-        if (c == '"' || c == '\n' || c == '\r') {
-            ret = true;
+    using escape_info = std::tuple<char, string_view>;
+    static escape_info s_table[]{
+        {'"', "&quot;"},
+        {'\n', "&lf;"},
+        {'\r', "&cr;"},
+    };
+    auto find_esapce_info = [](char c) -> escape_info* {
+        for (auto& ei : s_table)
+            if (c == std::get<0>(ei))
+                return &ei;
+        return nullptr;
+    };
+
+    bool need_escape = false;
+    for (auto c : v) {
+        if (auto* ei = find_esapce_info(c)) {
+            need_escape = true;
             break;
         }
     }
-    if (!ret)
-        return ret;
+    if (!need_escape)
+        return need_escape;
 
     std::string tmp;
+    tmp.reserve(v.size() * 2);
     for (char c : v) {
-        if (c == '"')
-            tmp += "&quot;";
-        else if (c == '\n')
-            tmp += "&lf;";
-        else if (c == '\r')
-            tmp += "&cr;";
+        if (auto* ei = find_esapce_info(c))
+            tmp += std::get<1>(*ei);
         else
             tmp += c;
     }
     v.swap(tmp);
-    return ret;
+    return true;
 }
 
 std::string Base64Encode(span<char> src)
 {
-    static const char* s_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static const char s_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     std::string dst;
     // result size will be about 133% of src. so this is a bit overkill.
@@ -46,25 +56,25 @@ std::string Base64Encode(span<char> src)
     for (size_t i = 0; i < n; ++i) {
         switch (i % 3) {
         case 0:
-            dst.push_back(s_table[(src[i] & 0xFC) >> 2]);
+            dst += s_table[(src[i] & 0xFC) >> 2];
             if (i + 1 == n) {
-                dst.push_back(s_table[(src[i] & 0x03) << 4]);
-                dst.push_back('=');
-                dst.push_back('=');
+                dst += s_table[(src[i] & 0x03) << 4];
+                dst += '=';
+                dst += '=';
             }
             break;
 
         case 1:
-            dst.push_back(s_table[((src[i - 1] & 0x03) << 4) | ((src[i + 0] & 0xF0) >> 4)]);
+            dst += s_table[((src[i - 1] & 0x03) << 4) | ((src[i + 0] & 0xF0) >> 4)];
             if (i + 1 == n) {
-                dst.push_back(s_table[(src[i] & 0x0F) << 2]);
-                dst.push_back('=');
+                dst += s_table[(src[i] & 0x0F) << 2];
+                dst += '=';
             }
             break;
 
         case 2:
-            dst.push_back(s_table[((src[i - 1] & 0x0F) << 2) | ((src[i + 0] & 0xC0) >> 6)]);
-            dst.push_back(s_table[src[i] & 0x3F]);
+            dst += s_table[((src[i - 1] & 0x0F) << 2) | ((src[i + 0] & 0xC0) >> 6)];
+            dst += s_table[src[i] & 0x3F];
             break;
         }
     }

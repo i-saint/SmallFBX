@@ -4,7 +4,7 @@
 
 namespace sfbx {
 
-// return false if no escape is needed
+// escape forbidden characters (e.g. " -> &quot;). return false if no escape is needed.
 bool Escape(std::string& v);
 std::string Base64Encode(span<char> src);
 

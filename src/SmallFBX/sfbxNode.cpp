@@ -18,7 +18,12 @@ Node::Node(Node&& v) noexcept
 {
 }
 
-uint64_t Node::read(std::istream& is, uint64_t start_offset)
+bool Node::readAscii(std::istream& is)
+{
+    return false;
+}
+
+uint64_t Node::readBinary(std::istream& is, uint64_t start_offset)
 {
     uint64_t ret = 0;
 
@@ -44,12 +49,12 @@ uint64_t Node::read(std::istream& is, uint64_t start_offset)
 
     reserveProperties(num_props);
     for (uint32_t i = 0; i < num_props; i++)
-        createProperty()->read(is);
+        createProperty()->readBinary(is);
     ret += prop_size;
 
     while (start_offset + ret < end_offset) {
         auto child = createChild();
-        ret += child->read(is, start_offset + ret);
+        ret += child->readBinary(is, start_offset + ret);
         if (child->isNull())
             eraseChild(child);
     }

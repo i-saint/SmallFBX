@@ -85,6 +85,9 @@ public:
 
 private:
     void initialize();
+    bool readAscii(std::istream& input);
+    bool readBinary(std::istream& input);
+    void importFBXObjects();
 
     FileVersion m_version = FileVersion::Default;
 

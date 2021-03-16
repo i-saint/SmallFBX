@@ -160,12 +160,13 @@ testCase(fbxWrite)
         doc->writeBinary("test_base_bin.fbx");
         doc->writeAscii("test_base_ascii.fbx");
     }
+
     {
         sfbx::DocumentPtr doc = sfbx::MakeDocument();
         sfbx::Model* root = doc->getRootModel();
 
         sfbx::Model* joints[5]{};
-        joints[0] = root->createChild<sfbx::Root>("joint1");
+        joints[0] = root->createChild<sfbx::LimbNode>("joint1");
         joints[1] = joints[0]->createChild<sfbx::LimbNode>("joint2");
         joints[2] = joints[1]->createChild<sfbx::LimbNode>("joint3");
         joints[3] = joints[2]->createChild<sfbx::LimbNode>("joint4");
@@ -192,8 +193,8 @@ testCase(fbxWrite)
 
     {
         // test animation remap
-        sfbx::DocumentPtr doc = sfbx::MakeDocument("test_base_bin.fbx");
-        if (doc->mergeAnimations("test_anim_bin.fbx")) {
+        sfbx::DocumentPtr doc = sfbx::MakeDocument("test_base_ascii.fbx");
+        if (doc->mergeAnimations("test_anim_ascii.fbx")) {
             if (auto take = doc->getCurrentTake()) {
                 take->applyAnimation(11.0f);
             }

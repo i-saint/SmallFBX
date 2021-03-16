@@ -13,6 +13,7 @@
 #include <memory>
 #include <fstream>
 #include <type_traits>
+#include <tuple>
 
 #ifdef __cpp_lib_span
     #include <span>

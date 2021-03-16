@@ -221,12 +221,11 @@ void Model::setRotationOrder(RotationOrder v) { m_rotation_order = v; }
 
 void Model::propagateDirty()
 {
-    // note:
-    // this is needlessly slow on huge joint structure + animations.
-    // we need to separate update transform phase and propagate dirty phase for optimal animation playback.
-    m_matrix_dirty = true;
-    for (auto c : m_child_models)
-        c->propagateDirty();
+    if (!m_matrix_dirty) {
+        m_matrix_dirty = true;
+        for (auto c : m_child_models)
+            c->propagateDirty();
+    }
 }
 
 #define MarkDirty(V, A) if (A != V) { V = A; propagateDirty(); }

@@ -10,8 +10,6 @@
 
 namespace sfbx {
 
-static const char* g_creator = "SmallFBX 1.0.0";
-
 static const uint8_t g_fbx_header_magic[23]{
     'K', 'a', 'y', 'd', 'a', 'r', 'a', ' ', 'F', 'B', 'X', ' ', 'B', 'i', 'n', 'a', 'r', 'y', ' ', ' ', 0x00, 0x1a, 0x00,
 };
@@ -49,10 +47,42 @@ void Document::initialize()
     m_root_model->setID(0);
 }
 
-bool Document::read(std::istream& is)
+bool Document::readAscii(std::istream& is)
 {
-    unload();
+    {
+        std::string line;
+        std::getline(is, line);
 
+        int major, minor, patch;
+        const char* s = std::strstr(line.c_str(), "FBX");
+        if (!s || sscanf(s, "FBX %d.%d.%d project file", &major, &minor, &patch) != 3) {
+            sfbxPrint("sfbx::Document::read(): not a fbx file\n");
+            return false;
+        }
+        m_version = (FileVersion)(major * 1000 + minor * 100);
+    }
+
+    try {
+        for (;;) {
+            auto node = createNode();
+            node->readAscii(is);
+            if (node->isNull()) {
+                eraseNode(node);
+                break;
+            }
+        }
+        importFBXObjects();
+    }
+    catch (const std::runtime_error& e) {
+        sfbxPrint("sfbx::Document::read(): exception %s\n", e.what());
+        return false;
+    }
+
+    return true;
+}
+
+bool Document::readBinary(std::istream& is)
+{
     char magic[std::size(g_fbx_header_magic)];
     readv(is, magic, std::size(g_fbx_header_magic));
     if (memcmp(magic, g_fbx_header_magic, std::size(g_fbx_header_magic)) != 0) {
@@ -61,78 +91,95 @@ bool Document::read(std::istream& is)
     }
     m_version = (FileVersion)read1<uint32_t>(is);
 
-
     try {
         uint64_t pos = std::size(g_fbx_header_magic) + 4;
         for (;;) {
             auto node = createNode();
-            pos += node->read(is, pos);
+            pos += node->readBinary(is, pos);
             if (node->isNull()) {
                 eraseNode(node);
                 break;
             }
         }
-
-        if (Node* objects = findNode(sfbxS_Objects)) {
-            initialize();
-            for (Node* n : objects->getChildren()) {
-                if (Object* obj = createObject(GetObjectClass(n), GetObjectSubClass(n))) {
-                    obj->setNode(n);
-                }
-            }
-        }
-
-        if (Node* connections = findNode(sfbxS_Connections)) {
-            for (Node* n : connections->getChildren()) {
-                auto name = n->getName();
-                auto ct = GetPropertyString(n, 0);
-                if (name == sfbxS_C && ct == sfbxS_OO) {
-                    Object* child = findObject(GetPropertyValue<int64>(n, 1));
-                    Object* parent = findObject(GetPropertyValue<int64>(n, 2));
-                    if (child && parent)
-                        parent->addChild(child);
-                }
-                else if (name == sfbxS_C && ct == sfbxS_OP) {
-                    Object* child = findObject(GetPropertyValue<int64>(n, 1));
-                    Object* parent = findObject(GetPropertyValue<int64>(n, 2));
-                    auto p = GetPropertyString(n, 3);
-                    if (child && parent)
-                        parent->addChild(child, p);
-                }
-#ifdef sfbxEnableLegacyFormatSupport
-                else if (name == sfbxS_Connect && ct == sfbxS_OO) {
-                    Object* child = findObject(GetPropertyString(n, 1));
-                    Object* parent = findObject(GetPropertyString(n, 2));
-                    if (child && parent)
-                        parent->addChild(child);
-                }
-#endif
-                else {
-                    sfbxPrint("sfbx::Document::read(): unrecognized connection type %s %s\n",
-                        std::string(name).c_str(), std::string(ct).c_str());
-                }
-            }
-        }
-
-        // index based loop because m_objects maybe push_backed in the loop
-        for (size_t i = 0; i < m_objects.size(); ++i) {
-            auto obj = m_objects[i];
-            obj->importFBXObjects();
-            if (obj->getParents().empty())
-                m_root_objects.push_back(obj.get());
-        }
-
-        if (Node* takes = findNode(sfbxS_Takes)) {
-            auto current = GetChildPropertyString(takes, sfbxS_Current);
-            if (auto* t = findAnimationStack(current))
-                m_current_take = t;
-        }
+        importFBXObjects();
     }
     catch (const std::runtime_error& e) {
         sfbxPrint("sfbx::Document::read(): exception %s\n", e.what());
         return false;
     }
     return true;
+}
+
+void Document::importFBXObjects()
+{
+    if (Node* objects = findNode(sfbxS_Objects)) {
+        initialize();
+        for (Node* n : objects->getChildren()) {
+            if (Object* obj = createObject(GetObjectClass(n), GetObjectSubClass(n))) {
+                obj->setNode(n);
+            }
+        }
+    }
+
+    if (Node* connections = findNode(sfbxS_Connections)) {
+        for (Node* n : connections->getChildren()) {
+            auto name = n->getName();
+            auto ct = GetPropertyString(n, 0);
+            if (name == sfbxS_C && ct == sfbxS_OO) {
+                Object* child = findObject(GetPropertyValue<int64>(n, 1));
+                Object* parent = findObject(GetPropertyValue<int64>(n, 2));
+                if (child && parent)
+                    parent->addChild(child);
+            }
+            else if (name == sfbxS_C && ct == sfbxS_OP) {
+                Object* child = findObject(GetPropertyValue<int64>(n, 1));
+                Object* parent = findObject(GetPropertyValue<int64>(n, 2));
+                auto p = GetPropertyString(n, 3);
+                if (child && parent)
+                    parent->addChild(child, p);
+            }
+#ifdef sfbxEnableLegacyFormatSupport
+            else if (name == sfbxS_Connect && ct == sfbxS_OO) {
+                Object* child = findObject(GetPropertyString(n, 1));
+                Object* parent = findObject(GetPropertyString(n, 2));
+                if (child && parent)
+                    parent->addChild(child);
+            }
+#endif
+            else {
+                sfbxPrint("sfbx::Document::read(): unrecognized connection type %s %s\n",
+                    std::string(name).c_str(), std::string(ct).c_str());
+            }
+        }
+    }
+
+    // index based loop because m_objects maybe push_backed in the loop
+    for (size_t i = 0; i < m_objects.size(); ++i) {
+        auto obj = m_objects[i];
+        obj->importFBXObjects();
+        if (obj->getParents().empty())
+            m_root_objects.push_back(obj.get());
+    }
+
+    if (Node* takes = findNode(sfbxS_Takes)) {
+        auto current = GetChildPropertyString(takes, sfbxS_Current);
+        if (auto* t = findAnimationStack(current))
+            m_current_take = t;
+    }
+}
+
+
+bool Document::read(std::istream& is)
+{
+    unload();
+
+    char c;
+    is.get(c);
+    is.unget();
+    if (c == ';')
+        return readAscii(is);
+    else
+        return readBinary(is);
 }
 
 bool Document::read(const std::string& path)
@@ -473,7 +520,7 @@ void Document::exportFBXNodes()
             timestamp->createChild(sfbxS_Second, now->tm_sec);
             timestamp->createChild(sfbxS_Millisecond, 0);
         }
-        header_extension->createChild(sfbxS_Creator, g_creator);
+        header_extension->createChild(sfbxS_Creator, sfbxS_SmallFBXWithVersion);
         {
             auto other_flags = header_extension->createChild(sfbxS_OtherFlags);
             other_flags->createChild(sfbxS_TCDefinition, sfbxI_TCDefinition);
@@ -513,32 +560,33 @@ void Document::exportFBXNodes()
 
     createNode(sfbxS_FileId)->addProperties(make_span(g_fbx_file_id));
     createNode(sfbxS_CreationTime)->addProperties(g_fbx_time_id);
-    createNode(sfbxS_Creator)->addProperties(g_creator);
+    createNode(sfbxS_Creator)->addProperties(sfbxS_SmallFBXWithVersion);
 
     auto global_settings = createNode(sfbxS_GlobalSettings);
     {
         global_settings->createChild(sfbxS_Version, sfbxI_GlobalSettingsVersion);
         auto prop = global_settings->createChild(sfbxS_Properties70);
-        prop->createChild(sfbxS_P, "UpAxis", "int", "Integer", "", 1);
-        prop->createChild(sfbxS_P, "UpAxisSign", "int", "Integer", "", 1);
-        prop->createChild(sfbxS_P, "FrontAxis", "int", "Integer", "", 2);
-        prop->createChild(sfbxS_P, "FrontAxisSign", "int", "Integer", "", 1);
-        prop->createChild(sfbxS_P, "CoordAxis", "int", "Integer", "", 0);
-        prop->createChild(sfbxS_P, "CoordAxisSign", "int", "Integer", "", 1);
-        prop->createChild(sfbxS_P, "OriginalUpAxis", "int", "Integer", "", -1);
-        prop->createChild(sfbxS_P, "OriginalUpAxisSign", "int", "Integer", "", 1);
-        prop->createChild(sfbxS_P, "UnitScaleFactor", "double", "Number", "", 1.000000);
-        prop->createChild(sfbxS_P, "OriginalUnitScaleFactor", "double", "Number", "", 1.000000);
-        prop->createChild(sfbxS_P, "AmbientColor", "ColorRGB", "Color", "", 0.000000, 0.000000, 0.000000);
-        prop->createChild(sfbxS_P, "DefaultCamera", "KString", "", "", "Producer Perspective");
-        prop->createChild(sfbxS_P, "TimeMode", "enum", "", "", 0);
-        prop->createChild(sfbxS_P, "TimeProtocol", "enum", "", "", 2);
-        prop->createChild(sfbxS_P, "SnapOnFrameMode", "enum", "", "", 0);
-        prop->createChild(sfbxS_P, "TimeSpanStart", "KTime", "Time", "", (int64)0);
-        prop->createChild(sfbxS_P, "TimeSpanStop", "KTime", "Time", "", (int64)sfbxI_TicksPerSecond);
-        prop->createChild(sfbxS_P, "CustomFrameRate", "double", "Number", "", -1.000000);
-        prop->createChild(sfbxS_P, "TimeMarker", "Compound", "", "");
-        prop->createChild(sfbxS_P, "CurrentTimeMarker", "int", "Integer", "", -1);
+
+        prop->createChild(sfbxS_P, sfbxS_UpAxis, sfbxS_int sfbxS_int, sfbxS_Integer, "", 1);
+        prop->createChild(sfbxS_P, sfbxS_UpAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+        prop->createChild(sfbxS_P, sfbxS_FrontAxis, sfbxS_int, sfbxS_Integer, "", 2);
+        prop->createChild(sfbxS_P, sfbxS_FrontAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+        prop->createChild(sfbxS_P, sfbxS_CoordAxis, sfbxS_int, sfbxS_Integer, "", 0);
+        prop->createChild(sfbxS_P, sfbxS_CoordAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+        prop->createChild(sfbxS_P, sfbxS_OriginalUpAxis, sfbxS_int, sfbxS_Integer, "", -1);
+        prop->createChild(sfbxS_P, sfbxS_OriginalUpAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+        prop->createChild(sfbxS_P, sfbxS_UnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
+        prop->createChild(sfbxS_P, sfbxS_OriginalUnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
+        prop->createChild(sfbxS_P, sfbxS_AmbientColor, sfbxS_ColorRGB sfbxS_ColorRGB, sfbxS_Color, "", 0.0, 0.0, 0.0);
+        prop->createChild(sfbxS_P, sfbxS_DefaultCamera, sfbxS_KString, "", "", "Producer Perspective");
+        prop->createChild(sfbxS_P, sfbxS_TimeMode, sfbxS_enum, "", "", 0);
+        prop->createChild(sfbxS_P, sfbxS_TimeProtocol, sfbxS_enum, "", "", 2);
+        prop->createChild(sfbxS_P, sfbxS_SnapOnFrameMode, sfbxS_enum, "", "", 0);
+        prop->createChild(sfbxS_P, sfbxS_TimeSpanStart, sfbxS_KTime, sfbxS_Time, "", (int64)0);
+        prop->createChild(sfbxS_P, sfbxS_TimeSpanStop, sfbxS_KTime, sfbxS_Time, "", (int64)sfbxI_TicksPerSecond);
+        prop->createChild(sfbxS_P, sfbxS_CustomFrameRate, sfbxS_double, sfbxS_Number, "", -1.0);
+        prop->createChild(sfbxS_P, sfbxS_TimeMarker, sfbxS_Compound, "", "");
+        prop->createChild(sfbxS_P, sfbxS_CurrentTimeMarker, sfbxS_int, sfbxS_Integer, "", -1);
     }
 
     auto documents = createNode(sfbxS_Documents);
@@ -549,8 +597,8 @@ void Document::exportFBXNodes()
             doc->addProperties((int64)this, "My Scene", "Scene");
 
             auto prop = doc->createChild(sfbxS_Properties70);
-            prop->createChild(sfbxS_P, "SourceObject", "object", "", "");
-            prop->createChild(sfbxS_P, "ActiveAnimStackName", "KString", "", "", take_name);
+            prop->createChild(sfbxS_P, sfbxS_SourceObject, sfbxS_object, "", "");
+            prop->createChild(sfbxS_P, sfbxS_ActiveAnimStackName, sfbxS_KString, "", "", take_name);
 
             doc->createChild(sfbxS_RootNode, 0);
         }
