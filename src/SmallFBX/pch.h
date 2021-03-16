@@ -12,6 +12,7 @@
 #include <functional>
 #include <memory>
 #include <fstream>
+#include <sstream>
 #include <type_traits>
 #include <tuple>
 

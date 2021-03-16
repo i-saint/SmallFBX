@@ -64,8 +64,13 @@ bool Document::readAscii(std::istream& is)
 
     try {
         for (;;) {
+            std::string block = ReadBlock(is, 0, true);
+            if (block.empty())
+                break;
+
+            std::istringstream ss(block);
             auto node = createNode();
-            node->readAscii(is);
+            node->readAscii(ss);
             if (node->isNull()) {
                 eraseNode(node);
                 break;
@@ -176,6 +181,8 @@ bool Document::read(std::istream& is)
     char c;
     is.get(c);
     is.unget();
+
+    // ascii FBX must start with ';'. even FBX SDK doesn't recognize without that.
     if (c == ';')
         return readAscii(is);
     else

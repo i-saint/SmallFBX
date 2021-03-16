@@ -81,6 +81,50 @@ std::string Base64Encode(span<char> src)
     return dst;
 }
 
+std::string ReadBlock(std::istream& is, bool initial_nest, bool keep_line_feed)
+{
+    std::string ret;
+    auto add_line = [keep_line_feed, &ret](const std::string& l) {
+        if (!l.empty()) {
+            ret += l;
+            if (keep_line_feed)
+                ret += '\n';
+        }
+    };
+
+    int nest = initial_nest;
+    std::string line;
+
+    if (nest == 0) {
+        for (;;) {
+            std::getline(is >> std::ws, line);
+            if (line.find('{') != std::string::npos) {
+                add_line(line);
+                ++nest;
+                break;
+            }
+            else if (is.eof())
+                return "";
+        }
+    }
+    for (;;) {
+        std::getline(is >> std::ws, line);
+        add_line(line);
+
+        if (line.find('{') != std::string::npos) {
+            ++nest;
+        }
+        else if (line.find('}') != std::string::npos) {
+            --nest;
+            if (nest == 0)
+                break;
+        }
+        else if (is.eof())
+            return "";
+    }
+    return ret;
+}
+
 RawVector<int> Triangulate(span<int> counts, span<int> indices)
 {
     size_t num_triangles = 0;

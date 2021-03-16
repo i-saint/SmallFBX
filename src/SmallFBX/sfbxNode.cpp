@@ -20,7 +20,70 @@ Node::Node(Node&& v) noexcept
 
 bool Node::readAscii(std::istream& is)
 {
-    return false;
+    {
+        std::string name;
+        is >> name;
+        if (name.back() != ':')
+            return false;
+        name.pop_back();
+        m_name = std::move(name);
+    }
+
+    is.ignore();
+    for (;;) {
+        std::string tmp;
+        is >> tmp;
+        if (tmp.empty())
+            break;
+        if (tmp.back() == ',')
+            tmp.pop_back();
+
+        if (tmp.front() == '"') {
+            tmp.pop_back();
+            addProperty(tmp.c_str() + 1);
+        }
+        else if (std::isdigit(tmp.front()) || tmp.front() == '-') {
+            addProperty(std::atof(tmp.c_str()));
+        }
+        else if (tmp.front() == '*') {
+            size_t array_size = std::atoi(tmp.c_str() + 1);
+            auto dst = createProperty()->allocateArray<float64>(array_size);
+            std::string dummy;
+            float64 d;
+
+            is >> dummy; // {
+            is >> dummy; // a:
+            for (size_t i = 0; i < array_size; ++i) {
+                is >> d;
+                is.ignore(); // ','
+                dst[i] = d;
+            }
+            is >> dummy; // }
+            break;
+        }
+        else if (tmp.front() == '{') {
+            std::string block = ReadBlock(is, 1, true);
+            std::stringstream ss(block);
+            for (;;) {
+                Node* child = createChild();
+                child->readAscii(ss);
+                if (child->isNull()) {
+                    eraseChild(child);
+                    break;
+                }
+            }
+            break;
+        }
+
+        while (is.peek() == ' ')
+            is.ignore();
+        if (is.peek() == '\n') {
+            is.ignore();
+            break;
+        }
+    }
+
+    return true;
 }
 
 uint64_t Node::readBinary(std::istream& is, uint64_t start_offset)
