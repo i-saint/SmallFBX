@@ -76,10 +76,11 @@ public:
     template<class T> span<T> getArray() const;
     string_view getString() const;
 
+    bool convert(PropertyType t) const;
     std::string toString(int depth = 0) const;
 
 private:
-    PropertyType m_type{};
+    mutable PropertyType m_type{};
     union {
         boolean b;
         int16 i16;
@@ -87,8 +88,8 @@ private:
         int64 i64;
         float32 f32;
         float64 f64;
-    } m_scalar{};
-    RawVector<char> m_data;
+    } mutable m_scalar{};
+    mutable RawVector<char> m_data;
 };
 
 } // namespace sfbx

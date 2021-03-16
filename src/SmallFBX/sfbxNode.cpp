@@ -20,38 +20,49 @@ Node::Node(Node&& v) noexcept
 
 bool Node::readAscii(std::istream& is)
 {
+    std::string line_;
+    std::getline(is, line_);
+
+    string_view line = remove_space(line_);
     {
-        std::string name;
-        is >> name;
-        if (name.back() != ':')
+        size_t pos = line.find(':');
+        if (pos == -1)
             return false;
-        name.pop_back();
-        m_name = std::move(name);
+        m_name = line.substr(0, pos);
+        line.remove_prefix(pos + 1);
     }
 
-    is.ignore();
-    for (;;) {
-        std::string tmp;
-        is >> tmp;
-        if (tmp.empty())
-            break;
-        if (tmp.back() == ',')
-            tmp.pop_back();
+    bool has_brace = false;
+    if (!line.empty() && line.back() == '{') {
+        has_brace = true;
+        line.remove_suffix(1);
+    }
 
-        if (tmp.front() == '"') {
-            tmp.pop_back();
-            addProperty(tmp.c_str() + 1);
+    // parse properties
+    auto elements = split(line, ",");
+    for (auto elem : elements) {
+        if (elem.empty()) {
+            continue;
         }
-        else if (std::isdigit(tmp.front()) || tmp.front() == '-') {
-            addProperty(std::atof(tmp.c_str()));
+        else if (elem.size() >= 2 && elem.front() == '"' && elem.back() == '"') { // string
+            elem.remove_prefix(1);
+            elem.remove_suffix(1);
+
+            auto pos = elem.find("::");
+            if (pos != std::string::npos)
+                addProperty(MakeFullName(elem.substr(pos + 2), elem.substr(0, pos)));
+            else
+                addProperty(elem);
         }
-        else if (tmp.front() == '*') {
-            size_t array_size = std::atoi(tmp.c_str() + 1);
+        else if (std::isdigit(elem.front()) || elem.front() == '-') { // number
+            addProperty(std::atof(elem.data()));
+        }
+        else if (elem.front() == '*') { // array
+            size_t array_size = std::atoi(elem.data() + 1);
             auto dst = createProperty()->allocateArray<float64>(array_size);
             std::string dummy;
             float64 d;
 
-            is >> dummy; // {
             is >> dummy; // a:
             for (size_t i = 0; i < array_size; ++i) {
                 is >> d;
@@ -59,30 +70,21 @@ bool Node::readAscii(std::istream& is)
                 dst[i] = d;
             }
             is >> dummy; // }
-            break;
-        }
-        else if (tmp.front() == '{') {
-            std::string block = ReadBlock(is, 1, true);
-            std::stringstream ss(block);
-            for (;;) {
-                Node* child = createChild();
-                child->readAscii(ss);
-                if (child->isNull()) {
-                    eraseChild(child);
-                    break;
-                }
-            }
-            break;
-        }
-
-        while (is.peek() == ' ')
-            is.ignore();
-        if (is.peek() == '\n') {
-            is.ignore();
-            break;
+            std::getline(is, line_);
+            return true;
         }
     }
 
+    if (has_brace) {
+        for (;;) {
+            Node* child = createChild();
+            child->readAscii(is);
+            if (child->isNull()) {
+                eraseChild(child);
+                break;
+            }
+        }
+    }
     return true;
 }
 

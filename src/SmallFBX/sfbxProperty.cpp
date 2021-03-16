@@ -253,12 +253,12 @@ uint64_t Property::getArraySize() const
     return m_data.size() / SizeOfElement(m_type);
 }
 
-template<> boolean Property::getValue() const { return m_scalar.b; }
-template<> bool    Property::getValue() const { return m_scalar.b; }
-template<> int16   Property::getValue() const { return m_scalar.i16; }
-template<> int32   Property::getValue() const { return m_scalar.i32; }
-template<> int64   Property::getValue() const { return m_scalar.i64; }
-template<> float32 Property::getValue() const { return m_scalar.f32; }
+template<> boolean Property::getValue() const { convert(PropertyType::Bool); return m_scalar.b; }
+template<> bool    Property::getValue() const { convert(PropertyType::Bool); return m_scalar.b; }
+template<> int16   Property::getValue() const { convert(PropertyType::Int16); return m_scalar.i16; }
+template<> int32   Property::getValue() const { convert(PropertyType::Int32); return m_scalar.i32; }
+template<> int64   Property::getValue() const { convert(PropertyType::Int64); return m_scalar.i64; }
+template<> float32 Property::getValue() const { convert(PropertyType::Float32); return m_scalar.f32; }
 template<> float64 Property::getValue() const { return m_scalar.f64; }
 
 template<> double2 Property::getValue() const { return *(double2*)m_data.data(); }
@@ -266,11 +266,10 @@ template<> double3 Property::getValue() const { return *(double3*)m_data.data();
 template<> double4 Property::getValue() const { return *(double4*)m_data.data(); }
 template<> double4x4 Property::getValue() const { return *(double4x4*)m_data.data(); }
 
-template<> span<boolean> Property::getArray() const { return make_span((boolean*)m_data.data(), getArraySize()); }
-template<> span<int16>   Property::getArray() const { return make_span((int16*)m_data.data(), getArraySize()); }
-template<> span<int32>   Property::getArray() const { return make_span((int32*)m_data.data(), getArraySize()); }
-template<> span<int64>   Property::getArray() const { return make_span((int64*)m_data.data(), getArraySize()); }
-template<> span<float32> Property::getArray() const { return make_span((float32*)m_data.data(), getArraySize()); }
+template<> span<int16>   Property::getArray() const { convert(PropertyType::Int16Array); return make_span((int16*)m_data.data(), getArraySize()); }
+template<> span<int32>   Property::getArray() const { convert(PropertyType::Int32Array); return make_span((int32*)m_data.data(), getArraySize()); }
+template<> span<int64>   Property::getArray() const { convert(PropertyType::Int64Array); return make_span((int64*)m_data.data(), getArraySize()); }
+template<> span<float32> Property::getArray() const { convert(PropertyType::Float32Array); return make_span((float32*)m_data.data(), getArraySize()); }
 template<> span<float64> Property::getArray() const { return make_span((float64*)m_data.data(), getArraySize()); }
 
 template<> span<double2> Property::getArray() const { return make_span((double2*)m_data.data(), getArraySize() / 2); }
@@ -278,6 +277,51 @@ template<> span<double3> Property::getArray() const { return make_span((double3*
 template<> span<double4> Property::getArray() const { return make_span((double4*)m_data.data(), getArraySize() / 4); }
 
 string_view Property::getString() const { return make_view(m_data); }
+
+template<class T>
+static inline void Convert(RawVector<char>& data)
+{
+    auto src = make_span((float64*)data.data(), data.size() / sizeof(float64));
+    auto dst = make_span((T*)data.data(), src.size());
+    copy(dst, src);
+    data.resize(dst.size() * sizeof(T));
+}
+
+bool Property::convert(PropertyType t) const
+{
+    if (m_type == t)
+        return true;
+
+    bool ret = false;
+    if (m_type == PropertyType::Float64) {
+        switch (t) {
+        case PropertyType::Bool: m_scalar.b = m_scalar.f64 == 0.0; ret = true; break;
+        case PropertyType::Int16: m_scalar.i16 = (int16)m_scalar.f64; ret = true; break;
+        case PropertyType::Int32: m_scalar.i32 = (int32)m_scalar.f64; ret = true; break;
+        case PropertyType::Int64: m_scalar.i64 = (int64)m_scalar.f64; ret = true; break;
+        case PropertyType::Float32: m_scalar.f32 = (float32)m_scalar.f64; ret = true; break;
+        default: break;
+        }
+    }
+    else if (m_type == PropertyType::Float64Array) {
+        switch (t) {
+        case PropertyType::Int16Array: Convert<int16>(m_data); ret = true; break;
+        case PropertyType::Int32Array: Convert<int32>(m_data); ret = true; break;
+        case PropertyType::Int64Array: Convert<int64>(m_data); ret = true; break;
+        case PropertyType::Float32Array: Convert<float32>(m_data); ret = true; break;
+        default: break;
+        }
+    }
+
+    if (ret) {
+        m_type = t;
+        return true;
+    }
+    else {
+        sfbxPrint("sfbx::Property::convert() invalid type conversion\n");
+        return false;
+    }
+}
 
 std::string Property::toString(int depth) const
 {
@@ -295,7 +339,6 @@ std::string Property::toString(int depth) const
             return s;
         };
         switch (m_type) {
-        case PropertyType::BoolArray: return toS(getArray<boolean>());
         case PropertyType::Int16Array: return toS(getArray<int16>());
         case PropertyType::Int32Array: return toS(getArray<int32>());
         case PropertyType::Int64Array: return toS(getArray<int64>());

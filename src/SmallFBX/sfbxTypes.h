@@ -126,6 +126,9 @@ inline constexpr string_view make_view(const char(&v)[N]) { return string_view{ 
 template<class Cont, sfbxRestrict(is_contiguous_container<Cont>)>
 inline constexpr string_view make_view(const Cont& v) { return { const_cast<get_value_type<Cont>*>(v.data()), v.size() }; }
 
+inline constexpr string_view make_view(const char* v, size_t n) { return { v, n }; }
+inline constexpr string_view make_view(const char* begin, const char* end) { return make_view(begin, (size_t)std::distance(begin, end)); }
+
 
 using int8 = int8_t;
 using int16 = int16_t;
