@@ -78,69 +78,6 @@ inline void transform_indexed(Dst& dst, const Src& src, const Indices& idx, cons
         *d++ = body(src[i]);
 }
 
-
-template<class String, class Container, class ToString>
-inline void join(String& dst, const Container& cont, typename String::const_pointer sep, const ToString& to_s)
-{
-    bool first = true;
-    for (auto& v : cont) {
-        if (!first)
-            dst += sep;
-        dst += to_s(v);
-        first = false;
-    }
-}
-
-template<class Container>
-inline void join(std::string& dst, const Container& cont, const char* sep)
-{
-    join(dst, cont, sep,
-        [](typename Container::const_reference v) { return std::to_string(v); });
-}
-
-
-inline string_view remove_leading_space(string_view v)
-{
-    while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) v.remove_prefix(1);
-    return v;
-}
-inline string_view remove_trailing_space(string_view v)
-{
-    while (!v.empty() && (v.back() == ' ' || v.back() == '\t')) v.remove_suffix(1);
-    return v;
-}
-inline string_view remove_space(string_view v)
-{
-    v = remove_leading_space(v);
-    v = remove_trailing_space(v);
-    return v;
-}
-
-template<class Body>
-inline void split(string_view line, string_view sep, const Body& body)
-{
-    auto range = line;
-    for (;;) {
-        size_t pos = range.find(sep);
-        if (pos != std::string::npos) {
-            body(remove_space(range.substr(0, pos)));
-            range.remove_prefix(pos + sep.size());
-        }
-        else {
-            body(remove_space(range));
-            break;
-        }
-    }
-}
-
-inline std::vector<string_view> split(string_view line, string_view sep)
-{
-    std::vector<string_view> ret;
-    split(line, sep, [&ret](string_view e) { ret.push_back(e); });
-    return ret;
-}
-
-
 template<class Container, class Body>
 inline size_t count(const Container& cont, const Body& body)
 {

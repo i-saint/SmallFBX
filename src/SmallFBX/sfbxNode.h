@@ -12,7 +12,7 @@ public:
     Node(const Node&) = delete;
     Node& operator=(const Node&) = delete;
 
-    bool readAscii(std::istream& is);
+    bool readAscii(string_view& is);
     uint64_t readBinary(std::istream& is, uint64_t start_offset);
     uint64_t write(std::ostream& os, uint64_t start_offset);
     bool isNull() const;

@@ -55,7 +55,6 @@ public:
     Property(const Property&) = delete;
     Property& operator=(const Property&) = delete;
 
-    void readAscii(std::istream& is);
     void readBinary(std::istream& is);
     void write(std::ostream& os);
 

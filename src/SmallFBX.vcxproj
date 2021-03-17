@@ -40,6 +40,7 @@
     <ClInclude Include="SmallFBX\sfbxModel.h" />
     <ClInclude Include="SmallFBX\sfbxNode.h" />
     <ClInclude Include="SmallFBX\sfbxObject.h" />
+    <ClInclude Include="SmallFBX\sfbxParser.h" />
     <ClInclude Include="SmallFBX\sfbxProperty.h" />
     <ClInclude Include="SmallFBX\sfbxRawVector.h" />
     <ClInclude Include="SmallFBX\sfbxTokens.h" />

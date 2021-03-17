@@ -2,6 +2,7 @@
 #include "sfbxInternal.h"
 #include "sfbxNode.h"
 #include "sfbxDocument.h"
+#include "sfbxParser.h"
 
 namespace sfbx {
 
@@ -18,70 +19,80 @@ Node::Node(Node&& v) noexcept
 {
 }
 
-bool Node::readAscii(std::istream& is)
+bool Node::readAscii(string_view& is)
 {
-    std::string line_;
-    std::getline(is, line_);
-
-    string_view line = remove_space(line_);
+    string_view line;
+    while (!is.empty()) {
+        line = get_line(is);
+        remove_leading_space(line);
+        if (line == "}")
+            return false;
+        else if (line == "{" || is_empty_line(line))
+            continue;
+        else
+            break;
+    }
     {
         size_t pos = line.find(':');
         if (pos == -1)
             return false;
-        m_name = line.substr(0, pos);
-        line.remove_prefix(pos + 1);
+        m_name = read_n(line, pos);
+        skip_n(line, 1);
     }
 
     bool has_brace = false;
+    size_t array_size = 0;
     if (!line.empty() && line.back() == '{') {
         has_brace = true;
         line.remove_suffix(1);
     }
 
     // parse properties
-    auto elements = split(line, ",");
-    for (auto elem : elements) {
-        if (elem.empty()) {
-            continue;
-        }
-        else if (elem.size() >= 2 && elem.front() == '"' && elem.back() == '"') { // string
-            elem.remove_prefix(1);
-            elem.remove_suffix(1);
+    split(line, ",", [&](string_view elem) {
+        if (elem.empty())
+            return;
 
-            auto pos = elem.find("::");
-            if (pos != std::string::npos)
-                addProperty(MakeFullName(elem.substr(pos + 2), elem.substr(0, pos)));
+        float64 number;
+        string_view str;
+        size_t size;
+        if (to_number(elem, number)) { // number
+            addProperty(number);
+        }
+        else if (to_string(elem, str)) { // string
+            auto pos = str.find("::");
+            if (pos != std::string::npos) // str is in full name format
+                addProperty(MakeFullName(str.substr(pos + 2), str.substr(0, pos)));
             else
-                addProperty(elem);
+                addProperty(str);
         }
-        else if (std::isdigit(elem.front()) || elem.front() == '-') { // number
-            addProperty(std::atof(elem.data()));
+        else if (to_array_size(elem, size)) { // array
+            array_size = size;
         }
-        else if (elem.front() == '*') { // array
-            size_t array_size = std::atoi(elem.data() + 1);
+        });
+
+    if (has_brace) { // parse inside '{'
+        if (array_size != 0) { // array
             auto dst = createProperty()->allocateArray<float64>(array_size);
-            std::string dummy;
             float64 d;
 
-            is >> dummy; // a:
+            read_until(is, "a:", true);
             for (size_t i = 0; i < array_size; ++i) {
-                is >> d;
-                is.ignore(); // ','
+                to_number(is, d);
                 dst[i] = d;
+                if (i != array_size - 1)
+                    read_until(is, ",", true);
             }
-            is >> dummy; // }
-            std::getline(is, line_);
-            return true;
+            read_until(is, "}", false);
+            get_line(is);
         }
-    }
-
-    if (has_brace) {
-        for (;;) {
-            Node* child = createChild();
-            child->readAscii(is);
-            if (child->isNull()) {
-                eraseChild(child);
-                break;
+        else { // child nodes
+            for (;;) {
+                Node* child = createChild();
+                child->readAscii(is);
+                if (child->isNull()) {
+                    eraseChild(child);
+                    break;
+                }
             }
         }
     }

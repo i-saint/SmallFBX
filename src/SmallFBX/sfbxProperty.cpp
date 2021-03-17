@@ -2,6 +2,7 @@
 #include "sfbxInternal.h"
 #include "sfbxProperty.h"
 #include "sfbxObject.h"
+#include "sfbxParser.h"
 
 #include <zlib.h>
 #pragma comment(lib, "zlib.lib")
@@ -44,11 +45,6 @@ Property::Property(Property&& v) noexcept
     , m_scalar(v.m_scalar)
     , m_data(std::move(v.m_data))
 {}
-
-void Property::readAscii(std::istream& is)
-{
-
-}
 
 void Property::readBinary(std::istream& is)
 {

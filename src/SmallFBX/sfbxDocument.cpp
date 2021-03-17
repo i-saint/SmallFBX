@@ -7,6 +7,7 @@
 #include "sfbxMaterial.h"
 #include "sfbxAnimation.h"
 #include "sfbxDocument.h"
+#include "sfbxParser.h"
 
 namespace sfbx {
 
@@ -63,14 +64,14 @@ bool Document::readAscii(std::istream& is)
     }
 
     try {
-        for (;;) {
-            std::string block = ReadBlock(is, 0, true);
+        while (!is.eof()) {
+            std::string block = read_brace_block(is);
             if (block.empty())
                 break;
 
-            std::istringstream ss(block);
+            string_view block_view = block;
             auto node = createNode();
-            node->readAscii(ss);
+            node->readAscii(block_view);
             if (node->isNull()) {
                 eraseNode(node);
                 break;
