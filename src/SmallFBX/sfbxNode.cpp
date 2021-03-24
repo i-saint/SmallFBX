@@ -325,7 +325,7 @@ std::string Node::toString(int depth) const
     s += getName();
     s += ": ";
     join(s, m_properties, ", ",
-        [depth](auto& p) { return p.toString(depth); });
+        [depth](std::string& dst, const Property& p) { p.toString(dst, depth); });
     s += " ";
 
     if (isNullTerminated()) {

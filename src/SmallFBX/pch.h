@@ -15,6 +15,7 @@
 #include <sstream>
 #include <type_traits>
 #include <tuple>
+#include <charconv>
 
 #ifdef __cpp_lib_span
     #include <span>

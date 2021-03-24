@@ -1,6 +1,59 @@
 #pragma once
 
+//// gcc/clang still don't support std::to_chars for float...
+//#define sfbxUseCharconv
+
 namespace sfbx {
+
+#ifdef sfbxUseCharconv
+template<class Value>
+inline void append(std::string& dst, Value v)
+{
+    char buf[64];
+    auto ret = std::to_chars(buf, buf + std::size(buf), v);
+    if (ret.ec == std::errc{})
+        dst.append(buf, ret.ptr);
+}
+#else
+
+inline void append(std::string& dst, int16 v)
+{
+    char buf[64];
+    sprintf(buf, "%hd", v);
+    dst += buf;
+}
+inline void append(std::string& dst, int32 v)
+{
+    char buf[64];
+    sprintf(buf, "%d", v);
+    dst += buf;
+}
+inline void append(std::string& dst, int64 v)
+{
+    char buf[64];
+    sprintf(buf, "%lld", v);
+    dst += buf;
+}
+inline void append(std::string& dst, float32 v)
+{
+    char buf[64];
+    sprintf(buf, "%g", v);
+    dst += buf;
+}
+inline void append(std::string& dst, float64 v)
+{
+    char buf[64];
+    sprintf(buf, "%lg", v);
+    dst += buf;
+}
+
+#endif
+
+inline void append(std::string& dst, boolean v)
+{
+    dst += v.value;
+}
+
 
 inline string_view& remove_leading_space(string_view& v)
 {
@@ -29,16 +82,16 @@ inline void join(String& dst, const Container& cont, typename String::const_poin
     for (auto& v : cont) {
         if (!first)
             dst += sep;
-        dst += to_s(v);
+        to_s(dst, v);
         first = false;
     }
 }
 
-template<class Container>
-inline void join(std::string& dst, const Container& cont, const char* sep)
+template<class String, class Container>
+inline void join(String& dst, const Container& cont, const char* sep)
 {
     join(dst, cont, sep,
-        [](typename Container::const_reference v) { return std::to_string(v); });
+        [](String& dst, typename Container::const_reference v) { append(dst, v); });
 }
 
 
@@ -85,48 +138,6 @@ inline string_view get_line(string_view& str)
     str.remove_prefix(str.size());
     return ret;
 }
-
-inline bool is_empty_line(string_view line)
-{
-    line = remove_leading_space(line);
-    return line.empty() || line.front() == ';'; // ';' : beginning of comment in ascii fbx
-}
-
-inline bool to_number(string_view str, float64& dst)
-{
-    str = remove_leading_space(str);
-    if (!str.empty() && (std::isdigit(str.front()) || str.front() == '-')) {
-        dst = std::atof(str.data());
-        return true;
-    }
-    return false;
-}
-
-inline bool to_string(string_view str, string_view& dst)
-{
-    str = remove_leading_space(str);
-    if (!str.empty() && str.front() == '"') {
-        size_t len = str.size();
-        for (size_t i = 1; i < len; ++i) {
-            if (str[i] == '"') {
-                dst = str.substr(1, i - 1);
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-inline bool to_array_size(string_view str, size_t& dst)
-{
-    str = remove_leading_space(str);
-    if (str.size() >= 2 && str[0] == '*') {
-        dst = std::atoi(str.data() + 1);
-        return true;
-    }
-    return false;
-}
-
 
 inline std::string read_brace_block(std::istream& is)
 {
@@ -234,4 +245,56 @@ inline void skip_n(string_view& is, size_t n)
     read_n(is, n);
 }
 
+
+inline bool is_empty_line(string_view line)
+{
+    remove_leading_space(line);
+    return line.empty() || line.front() == ';'; // ';' : beginning of comment in ascii fbx
+}
+
+inline bool to_number(string_view str, float64& dst)
+{
+    remove_leading_space(str);
+    if (!str.empty()) {
+#ifdef sfbxUseCharconv
+        return std::from_chars(str.data(), str.data() + str.size(), dst).ec == std::errc{};
+#else
+        if (std::isdigit(str.front()) || str.front() == '-') {
+            dst = std::atof(str.data());
+            return true;
+        }
+#endif
+    }
+    return false;
+}
+
+inline bool to_string(string_view str, string_view& dst)
+{
+    remove_leading_space(str);
+    if (!str.empty() && str.front() == '"') {
+        size_t len = str.size();
+        for (size_t i = 1; i < len; ++i) {
+            if (str[i] == '"') {
+                dst = str.substr(1, i - 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+inline bool to_array_size(string_view str, size_t& dst)
+{
+    remove_leading_space(str);
+    if (str.size() >= 2 && str[0] == '*') {
+        skip_n(str, 1);
+#ifdef sfbxUseCharconv
+        return std::from_chars(str.data(), str.data() + str.size(), dst).ec == std::errc{};
+#else
+        dst = std::atoi(str.data());
+        return true;
+#endif
+    }
+    return false;
+}
 } // namespace sfbx

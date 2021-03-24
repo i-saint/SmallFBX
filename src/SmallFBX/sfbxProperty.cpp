@@ -319,46 +319,44 @@ bool Property::convert(PropertyType t) const
     }
 }
 
-std::string Property::toString(int depth) const
+void Property::toString(std::string& dst, int depth) const
 {
     if (isArray()) {
-        auto toS = [depth](const auto& span) {
-            std::string s = "*";
-            s += std::to_string(span.size());
-            s += " {\n";
-            AddTabs(s, depth + 1);
-            s += "a: ";
-            join(s, span, ",");
-            s += "\n";
-            AddTabs(s, depth);
-            s += "}";
-            return s;
+        auto do_append = [&dst, depth](const auto& span) {
+            dst += "*";
+            dst += std::to_string(span.size());
+            dst += " {\n";
+            AddTabs(dst, depth + 1);
+            dst += "a: ";
+            join(dst, span, ",");
+            dst += "\n";
+            AddTabs(dst, depth);
+            dst += "}";
         };
         switch (m_type) {
-        case PropertyType::Int16Array: return toS(getArray<int16>());
-        case PropertyType::Int32Array: return toS(getArray<int32>());
-        case PropertyType::Int64Array: return toS(getArray<int64>());
-        case PropertyType::Float32Array: return toS(getArray<float32>());
-        case PropertyType::Float64Array: return toS(getArray<float64>());
+        case PropertyType::Int16Array: do_append(getArray<int16>()); break;
+        case PropertyType::Int32Array: do_append(getArray<int32>()); break;
+        case PropertyType::Int64Array: do_append(getArray<int64>()); break;
+        case PropertyType::Float32Array: do_append(getArray<float32>()); break;
+        case PropertyType::Float64Array: do_append(getArray<float64>()); break;
         default: break;
         }
     }
     else {
         switch (m_type) {
-        case PropertyType::Bool: return std::to_string(getValue<boolean>());
-        case PropertyType::Int16: return std::to_string(getValue<int16>());
-        case PropertyType::Int32: return std::to_string(getValue<int32>());
-        case PropertyType::Int64: return std::to_string(getValue<int64>());
-        case PropertyType::Float32: return std::to_string(getValue<float32>());
-        case PropertyType::Float64: return std::to_string(getValue<float64>());
+        case PropertyType::Bool: append(dst, getValue<boolean>()); break;
+        case PropertyType::Int16: append(dst, getValue<int16>()); break;
+        case PropertyType::Int32: append(dst, getValue<int32>()); break;
+        case PropertyType::Int64: append(dst, getValue<int64>()); break;
+        case PropertyType::Float32: append(dst, getValue<float32>()); break;
+        case PropertyType::Float64: append(dst, getValue<float64>()); break;
 
         case PropertyType::Blob:
         {
-            std::string s;
-            s += '"';
-            s += Base64Encode(make_span(m_data));
-            s += '"';
-            return s;
+            dst += '"';
+            dst += Base64Encode(make_span(m_data));
+            dst += '"';
+            break;
         }
         case PropertyType::String:
         {
@@ -384,14 +382,14 @@ std::string Property::toString(int depth) const
             }
             s[0] = '"'; // replace reserved space
             s += '"';
-            return s;
+            dst += s;
+            break;
         }
 
         default:
             break;
         }
     }
-    return "";
 }
 
 } // namespace sfbx

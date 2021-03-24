@@ -372,15 +372,3 @@ template<class T, class U>
 inline T* as(U* v) { return dynamic_cast<T*>(v); }
 
 } // namespace sfbx
-
-
-namespace std {
-
-inline std::string to_string(sfbx::boolean v)
-{
-    std::string ret;
-    ret += v.value;
-    return ret;
-}
-
-} // namespace std

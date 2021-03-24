@@ -76,7 +76,7 @@ public:
     string_view getString() const;
 
     bool convert(PropertyType t) const;
-    std::string toString(int depth = 0) const;
+    void toString(std::string& dst, int depth = 0) const;
 
 private:
     mutable PropertyType m_type{};
