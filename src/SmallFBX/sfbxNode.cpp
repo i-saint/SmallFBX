@@ -345,7 +345,7 @@ Node* Node::findChild(string_view name) const
 
 uint32_t Node::getDocumentVersion() const
 {
-    return (uint32_t)m_document->getVersion();
+    return (uint32_t)m_document->getFileVersion();
 }
 
 uint32_t Node::getHeaderSize() const

@@ -24,36 +24,24 @@ class Document
 {
 public:
     Document();
-    explicit Document(std::istream& input);
+    explicit Document(std::istream& is);
     explicit Document(const std::string& path);
     bool valid() const;
 
-    bool read(std::istream &input);
+    bool read(std::istream& is);
     bool read(const std::string& path);
-    bool writeBinary(std::ostream& output);
-    bool writeBinary(const std::string& path);
-    bool writeAscii(std::ostream& output);
-    bool writeAscii(const std::string& path);
-    void unload();
+    bool writeBinary(std::ostream& os) const;
+    bool writeBinary(const std::string& path) const;
+    bool writeAscii(std::ostream& os) const;
+    bool writeAscii(const std::string& path) const;
 
-    FileVersion getVersion();
-    void setVersion(FileVersion v);
+    FileVersion getFileVersion() const;
+    void setFileVersion(FileVersion v);
 
-    Node* createNode(string_view name = {});
-    Node* createChildNode(string_view name = {});
-    void eraseNode(Node* n);
-    Node* findNode(string_view name) const;
-    span<NodePtr> getAllNodes() const;
-    span<Node*> getRootNodes() const;
-
-    void createLinkOO(Object* child, Object* parent);
-    void createLinkOP(Object* child, Object* parent, string_view target);
-
-
-    Object* createObject(ObjectClass t, ObjectSubClass s);
-    template<class T> T* createObject(string_view name = {});
-    void addObject(ObjectPtr obj, bool check = false);
-    void eraseObject(Object* objv);
+    // T: Mesh, Camera, Light, LimbNode, Skin, etc.
+    // refer TestFBX.cpp for how to use. or refer sfbxEachObjectType() in sfbxObject.h for complete type list.
+    template<class T>
+    T* createObject(string_view name = {});
 
     Object* findObject(int64 id) const;
     // name accepts both full name and display name. (see MakeFullName() etc)
@@ -73,8 +61,6 @@ public:
     bool mergeAnimations(const std::string& path);
 
     void exportFBXNodes();
-    std::string toString();
-
 
     // utils
     template<class T>
@@ -83,10 +69,30 @@ public:
         return count(m_objects, [](auto& p) { return as<T>(p.get()) && p->getID() != 0; });
     }
 
+
+public:
+    // internal
+
+    void unload();
+    bool readAscii(std::istream& is);
+    bool readBinary(std::istream& is);
+
+    Node* createNode(string_view name = {});
+    Node* createChildNode(string_view name = {});
+    void eraseNode(Node* n);
+    Node* findNode(string_view name) const;
+    span<NodePtr> getAllNodes() const;
+    span<Node*> getRootNodes() const;
+
+    Object* createObject(ObjectClass t, ObjectSubClass s);
+    void addObject(ObjectPtr obj, bool check = false);
+    void eraseObject(Object* obj);
+
+    void createLinkOO(Object* child, Object* parent);
+    void createLinkOP(Object* child, Object* parent, string_view target);
+
 private:
     void initialize();
-    bool readAscii(std::istream& input);
-    bool readBinary(std::istream& input);
     void importFBXObjects();
 
     FileVersion m_version = FileVersion::Default;

@@ -125,10 +125,10 @@ inline string_view get_line(string_view& str)
 {
     size_t len = str.size();
     for (size_t i = 0; i < len; ++i) {
-        if (str[i] == '\n') {
+        if (str[i] == '\n' || str[i] == '\r') {
             auto ret = str.substr(0, i);
             str.remove_prefix(i + 1);
-            if (!str.empty() && str.front() == '\r')
+            if (!str.empty() && str.front() == '\n')
                 str.remove_prefix(1);
             return ret;
         }

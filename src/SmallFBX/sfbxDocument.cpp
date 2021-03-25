@@ -202,7 +202,7 @@ bool Document::read(const std::string& path)
 }
 
 
-bool Document::writeBinary(std::ostream& os)
+bool Document::writeBinary(std::ostream& os) const
 {
     writev(os, g_fbx_header_magic);
     writev(os, m_version);
@@ -212,7 +212,7 @@ bool Document::writeBinary(std::ostream& os)
         pos += node->writeBinary(os, pos);
     {
         Node null_node;
-        null_node.m_document = this;
+        null_node.m_document = const_cast<Document*>(this);
         pos += null_node.writeBinary(os, pos);
     }
 
@@ -238,7 +238,7 @@ bool Document::writeBinary(std::ostream& os)
     return true;
 }
 
-bool Document::writeBinary(const std::string& path)
+bool Document::writeBinary(const std::string& path) const
 {
     std::ofstream file;
     file.open(path, std::ios::out | std::ios::binary);
@@ -247,7 +247,7 @@ bool Document::writeBinary(const std::string& path)
     return false;
 }
 
-bool Document::writeAscii(std::ostream& os)
+bool Document::writeAscii(std::ostream& os) const
 {
     char version[128];
     sprintf(version, "; FBX %d.%d.0 project file\n", (int)m_version / 1000 % 10, (int)m_version / 100 % 10);
@@ -267,7 +267,7 @@ bool Document::writeAscii(std::ostream& os)
     return true;
 }
 
-bool Document::writeAscii(const std::string& path)
+bool Document::writeAscii(const std::string& path) const
 {
     std::ofstream file;
     file.open(path, std::ios::out | std::ios::binary);
@@ -292,13 +292,13 @@ void Document::unload()
     m_current_take = {};
 }
 
-FileVersion Document::getVersion()
+FileVersion Document::getFileVersion() const
 {
     return m_version;
 }
 
 
-void Document::setVersion(FileVersion v)
+void Document::setFileVersion(FileVersion v)
 {
     m_version = v;
 }
@@ -528,7 +528,7 @@ void Document::exportFBXNodes()
     auto header_extension = createNode(sfbxS_FBXHeaderExtension);
     {
         header_extension->createChild(sfbxS_FBXHeaderVersion, (int32_t)1003);
-        header_extension->createChild(sfbxS_FBXVersion, (int32_t)getVersion());
+        header_extension->createChild(sfbxS_FBXVersion, (int32_t)getFileVersion());
         header_extension->createChild(sfbxS_EncryptionType, (int32_t)0);
         {
             auto timestamp = header_extension->createChild(sfbxS_CreationTimeStamp);
@@ -679,13 +679,6 @@ void Document::exportFBXNodes()
         if (rstart != 0.0f || rstop != 0.0f)
             take->createChild(sfbxS_ReferenceTime, ToTicks(rstart), ToTicks(rstop));
     }
-}
-
-std::string Document::toString()
-{
-    std::stringstream ss;
-    writeAscii(ss);
-    return ss.str();
 }
 
 
