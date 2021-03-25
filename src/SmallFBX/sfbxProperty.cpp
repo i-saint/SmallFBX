@@ -46,7 +46,7 @@ Property::Property(Property&& v) noexcept
     , m_data(std::move(v.m_data))
 {}
 
-void Property::readBinary(std::istream& is)
+void Property::read(std::istream& is)
 {
     m_type = read1<PropertyType>(is);
     if (m_type == PropertyType::String || m_type == PropertyType::Blob) {

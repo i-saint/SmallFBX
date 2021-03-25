@@ -55,7 +55,7 @@ public:
     Property(const Property&) = delete;
     Property& operator=(const Property&) = delete;
 
-    void readBinary(std::istream& is);
+    void read(std::istream& is);
     void write(std::ostream& os);
 
     template<class T> span<T> allocateArray(size_t size);

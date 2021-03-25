@@ -12,9 +12,12 @@ public:
     Node(const Node&) = delete;
     Node& operator=(const Node&) = delete;
 
-    bool readAscii(string_view& is);
     uint64_t readBinary(std::istream& is, uint64_t start_offset);
-    uint64_t write(std::ostream& os, uint64_t start_offset);
+    uint64_t writeBinary(std::ostream& os, uint64_t start_offset);
+
+    bool readAscii(string_view& is);
+    bool writeAscii(std::ostream& os, int depth = 0) const;
+
     bool isNull() const;
     bool isRoot() const;
 
@@ -43,8 +46,6 @@ public:
     span<Node*> getChildren() const;
     Node* getChild(size_t i) const;
     Node* findChild(string_view name) const;
-
-    std::string toString(int depth = 0) const;
 
 private:
     void addProperties_() {}

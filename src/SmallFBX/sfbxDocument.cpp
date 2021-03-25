@@ -209,11 +209,11 @@ bool Document::writeBinary(std::ostream& os)
 
     uint64_t pos = std::size(g_fbx_header_magic) + 4;
     for (Node* node : m_root_nodes)
-        pos += node->write(os, pos);
+        pos += node->writeBinary(os, pos);
     {
         Node null_node;
         null_node.m_document = this;
-        pos += null_node.write(os, pos);
+        pos += null_node.writeBinary(os, pos);
     }
 
     // footer
@@ -247,10 +247,23 @@ bool Document::writeBinary(const std::string& path)
     return false;
 }
 
-bool Document::writeAscii(std::ostream& output)
+bool Document::writeAscii(std::ostream& os)
 {
-    auto data = toString();
-    output.write(data.data(), data.size());
+    char version[128];
+    sprintf(version, "; FBX %d.%d.0 project file\n", (int)m_version / 1000 % 10, (int)m_version / 100 % 10);
+
+    os << version;
+    os << "; ----------------------------------------------------\n\n";
+
+    for (auto node : getRootNodes()) {
+        // these nodes seem required only in binary format.
+        if (node->getName() == sfbxS_FileId ||
+            node->getName() == sfbxS_CreationTime ||
+            node->getName() == sfbxS_Creator)
+            continue;
+        node->writeAscii(os);
+    }
+
     return true;
 }
 
@@ -670,22 +683,9 @@ void Document::exportFBXNodes()
 
 std::string Document::toString()
 {
-    char version[128];
-    sprintf(version, "; FBX %d.%d.0 project file\n", (int)m_version / 1000 % 10, (int)m_version / 100 % 10);
-
-    std::string s;
-    s += version;
-    s += "; ----------------------------------------------------\n\n";
-
-    for (auto node : getRootNodes()) {
-        // these nodes seem required only in binary format.
-        if (node->getName() == sfbxS_FileId ||
-            node->getName() == sfbxS_CreationTime ||
-            node->getName() == sfbxS_Creator)
-            continue;
-        s += node->toString();
-    }
-    return s;
+    std::stringstream ss;
+    writeAscii(ss);
+    return ss.str();
 }
 
 

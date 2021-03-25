@@ -99,6 +99,34 @@ bool Node::readAscii(string_view& is)
     return true;
 }
 
+bool Node::writeAscii(std::ostream& os, int depth) const
+{
+    if (isNull())
+        return false;
+
+    {
+        std::string s;
+        AddTabs(s, depth);
+        s += getName();
+        s += ": ";
+        join(s, m_properties, ", ",
+            [depth](std::string& dst, const Property& p) { p.toString(dst, depth); });
+        s += " ";
+        os << s;
+    }
+
+    if (isNullTerminated()) {
+        os << "{\n";
+        for (auto* c : m_children)
+            c->writeAscii(os, depth + 1);
+        for (int i = 0; i < depth; ++i)
+            os << "\t";
+        os << "}";
+    }
+    os << "\n";
+    return true;
+}
+
 uint64_t Node::readBinary(std::istream& is, uint64_t start_offset)
 {
     uint64_t ret = 0;
@@ -125,7 +153,7 @@ uint64_t Node::readBinary(std::istream& is, uint64_t start_offset)
 
     reserveProperties(num_props);
     for (uint32_t i = 0; i < num_props; i++)
-        createProperty()->readBinary(is);
+        createProperty()->read(is);
     ret += prop_size;
 
     while (start_offset + ret < end_offset) {
@@ -137,7 +165,7 @@ uint64_t Node::readBinary(std::istream& is, uint64_t start_offset)
     return ret;
 }
 
-uint64_t Node::write(std::ostream& os, uint64_t start_offset)
+uint64_t Node::writeBinary(std::ostream& os, uint64_t start_offset)
 {
     uint32_t header_size = getHeaderSize() + m_name.size();
     if (isNull()) {
@@ -161,9 +189,9 @@ uint64_t Node::write(std::ostream& os, uint64_t start_offset)
     {
         CounterStream cs;
         for (auto child : m_children)
-            child->write(cs, 0);
+            child->writeBinary(cs, 0);
         if (null_terminate)
-            null_node.write(cs, 0);
+            null_node.writeBinary(cs, 0);
         children_size = cs.size();
     }
 
@@ -187,9 +215,9 @@ uint64_t Node::write(std::ostream& os, uint64_t start_offset)
 
     uint64_t pos = header_size + property_size;
     for (auto child : m_children)
-        pos += child->write(os, start_offset + pos);
+        pos += child->writeBinary(os, start_offset + pos);
     if (null_terminate)
-        pos += null_node.write(os, start_offset + pos);
+        pos += null_node.writeBinary(os, start_offset + pos);
     return pos;
 }
 
@@ -313,31 +341,6 @@ Node* Node::findChild(string_view name) const
     auto it = std::find_if(m_children.begin(), m_children.end(),
         [name](Node* p) { return p->getName() == name; });
     return it != m_children.end() ? *it : nullptr;
-}
-
-std::string Node::toString(int depth) const
-{
-    if (isNull())
-        return {};
-
-    std::string s;
-    AddTabs(s, depth);
-    s += getName();
-    s += ": ";
-    join(s, m_properties, ", ",
-        [depth](std::string& dst, const Property& p) { p.toString(dst, depth); });
-    s += " ";
-
-    if (isNullTerminated()) {
-        s += "{\n";
-        for (auto* c : m_children)
-            s += c->toString(depth + 1);
-        AddTabs(s, depth);
-        s += "}";
-    }
-    s += "\n";
-
-    return s;
 }
 
 uint32_t Node::getDocumentVersion() const
