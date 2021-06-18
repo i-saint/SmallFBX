@@ -89,7 +89,7 @@ void Property::read(std::istream& is)
         else if (encoding == 1) {
             RawVector<char> compressed(src_size);
             readv(is, compressed.data(), src_size);
-            uncompress2((Bytef*)m_data.data(), &dest_size, (const Bytef*)compressed.data(), &src_size);
+            uncompress((Bytef*)m_data.data(), &dest_size, (const Bytef*)compressed.data(), src_size);
         }
     }
 }
