@@ -172,6 +172,68 @@ void Document::importFBXObjects()
         if (auto* t = findAnimationStack(current))
             m_current_take = t;
     }
+
+    global_settings.importFBXObjects(this);
+}
+
+
+void GlobalSettings::importFBXObjects(Document *doc)
+{
+    Node* global_settings = doc->findNode(sfbxS_GlobalSettings);
+    if (!global_settings)
+        return;
+
+//    global_settings->createChild(sfbxS_Version, sfbxI_GlobalSettingsVersion);
+
+    Node *prop = global_settings->findChild(sfbxS_Properties70);
+    if (!prop)
+        prop = global_settings->findChild(sfbxS_Properties);
+    if (!prop)
+        return;
+
+    for (auto& c : prop->getChildren()) {
+        auto propssize = c->getProperties().size();
+        if (c->getName() != sfbxS_P || propssize < 1)
+            continue;
+
+        auto name = c->getProperty(0)->getString();
+
+        //TODO helper, impl all
+        if (name == sfbxS_DefaultCamera) {
+//                        prop->createChild(sfbxS_P, sfbxS_DefaultCamera, sfbxS_KString, "", "", "Producer Perspective");
+            assert(propssize >= 5);
+            camera = c->getProperty(4)->getString();
+        }
+        if (name == sfbxS_TimeSpanStop) {
+//                        prop->createChild(sfbxS_P, sfbxS_DefaultCamera, sfbxS_KString, "", "", "Producer Perspective");
+            assert(propssize >= 5);
+            time_stop = c->getProperty(4)->getValue<int64>();
+        }
+
+//            prop->createChild(sfbxS_P, sfbxS_UpAxis, sfbxS_int sfbxS_int, sfbxS_Integer, "", 1);
+//            prop->createChild(sfbxS_P, sfbxS_UpAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+//            prop->createChild(sfbxS_P, sfbxS_FrontAxis, sfbxS_int, sfbxS_Integer, "", 2);
+//            prop->createChild(sfbxS_P, sfbxS_FrontAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+//            prop->createChild(sfbxS_P, sfbxS_CoordAxis, sfbxS_int, sfbxS_Integer, "", 0);
+//            prop->createChild(sfbxS_P, sfbxS_CoordAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+//            prop->createChild(sfbxS_P, sfbxS_OriginalUpAxis, sfbxS_int, sfbxS_Integer, "", -1);
+//            prop->createChild(sfbxS_P, sfbxS_OriginalUpAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+
+//            prop->createChild(sfbxS_P, sfbxS_UnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
+//            prop->createChild(sfbxS_P, sfbxS_OriginalUnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
+//            prop->createChild(sfbxS_P, sfbxS_AmbientColor, sfbxS_ColorRGB sfbxS_ColorRGB, sfbxS_Color, "", 0.0, 0.0, 0.0);
+
+//            prop->createChild(sfbxS_P, sfbxS_TimeMode, sfbxS_enum, "", "", 0);
+//            prop->createChild(sfbxS_P, sfbxS_TimeProtocol, sfbxS_enum, "", "", 2);
+//            prop->createChild(sfbxS_P, sfbxS_SnapOnFrameMode, sfbxS_enum, "", "", 0);
+//            prop->createChild(sfbxS_P, sfbxS_TimeSpanStart, sfbxS_KTime, sfbxS_Time, "", (int64)0);
+//            prop->createChild(sfbxS_P, sfbxS_CustomFrameRate, sfbxS_double, sfbxS_Number, "", -1.0);
+
+//            prop->createChild(sfbxS_P, sfbxS_TimeMarker, sfbxS_Compound, "", "");
+//            prop->createChild(sfbxS_P, sfbxS_CurrentTimeMarker, sfbxS_int, sfbxS_Integer, "", -1);
+
+    }
+
 }
 
 
@@ -599,7 +661,7 @@ void Document::exportFBXNodes()
         prop->createChild(sfbxS_P, sfbxS_UnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
         prop->createChild(sfbxS_P, sfbxS_OriginalUnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
         prop->createChild(sfbxS_P, sfbxS_AmbientColor, sfbxS_ColorRGB sfbxS_ColorRGB, sfbxS_Color, "", 0.0, 0.0, 0.0);
-        prop->createChild(sfbxS_P, sfbxS_DefaultCamera, sfbxS_KString, "", "", "Producer Perspective");
+        prop->createChild(sfbxS_P, sfbxS_DefaultCamera, sfbxS_KString, "", "", this->global_settings.camera);
         prop->createChild(sfbxS_P, sfbxS_TimeMode, sfbxS_enum, "", "", 0);
         prop->createChild(sfbxS_P, sfbxS_TimeProtocol, sfbxS_enum, "", "", 2);
         prop->createChild(sfbxS_P, sfbxS_SnapOnFrameMode, sfbxS_enum, "", "", 0);
