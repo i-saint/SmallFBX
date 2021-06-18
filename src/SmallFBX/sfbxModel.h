@@ -248,6 +248,9 @@ public:
     float getAspectRatio() const;
     float getNearPlane() const;
     float getFarPlane() const;
+    float3 getUpVector() const;
+    float3 getTargetPosition() const;
+    bool getAutoClipPlanes() const;
 
     // there is no setFildOfView() because fov is computed by aperture and focal length.
     // focal length can be computed by compute_focal_length() in sfbxMath.h with fov and aperture.
@@ -274,6 +277,9 @@ protected:
     float2 m_aspect{ 1920.0f, 1080.0f };
     float m_near_plane = 0.1f;
     float m_far_plane = 1000.0f;
+    float3 m_up_vector = {0, 1, 0};
+    float3 m_target_position = {0, 0, 0};
+    bool m_auto_clip_planes = false;
 };
 
 

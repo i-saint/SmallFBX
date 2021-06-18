@@ -226,6 +226,9 @@
 #define sfbxS_FilmOffsetY           "FilmOffsetY"
 #define sfbxS_NearPlane             "NearPlane"
 #define sfbxS_FarPlane              "FarPlane"
+#define sfbxS_UpVector              "UpVector"
+#define sfbxS_InterestPosition      "InterestPosition"
+#define sfbxS_AutoComputeClipPanes  "AutoComputeClipPanes"
 
 #define sfbxS_filmboxTypeID         "filmboxTypeID"
 #define sfbxS_lockInfluenceWeights  "lockInfluenceWeights"

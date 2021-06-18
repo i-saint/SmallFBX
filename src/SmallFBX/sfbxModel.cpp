@@ -471,6 +471,8 @@ ObjectSubClass Camera::getSubClass() const { return ObjectSubClass::Camera; }
 void Camera::importFBXObjects()
 {
     super::importFBXObjects();
+    if (m_target_position != float3::zero())
+        m_target_position = m_target_position - getPosition();
 }
 
 void CameraAttribute::importFBXObjects()
@@ -482,6 +484,27 @@ void CameraAttribute::importFBXObjects()
         return;
 
     EnumerateProperties(getNode(), [cam](Node* p) {
+
+        auto get_float3 = [p]() -> float3 {
+            if (GetPropertyCount(p) == 7) {
+                return float3{
+                    (float)GetPropertyValue<float64>(p, 4),
+                    (float)GetPropertyValue<float64>(p, 5),
+                    (float)GetPropertyValue<float64>(p, 6),
+                };
+            }
+#ifdef sfbxEnableLegacyFormatSupport
+            else if (GetPropertyCount(p) == 6) {
+                return float3{
+                    (float)GetPropertyValue<float64>(p, 3),
+                    (float)GetPropertyValue<float64>(p, 4),
+                    (float)GetPropertyValue<float64>(p, 5),
+                };
+            }
+#endif
+            return {};
+        };
+
         auto name = GetPropertyString(p, 0);
         if (name == sfbxS_CameraProjectionType)
             cam->m_camera_type = (CameraType)GetPropertyValue<int32>(p, 4);
@@ -499,6 +522,12 @@ void CameraAttribute::importFBXObjects()
             cam->m_near_plane = (float32)GetPropertyValue<float64>(p, 4);
         else if (name == sfbxS_FarPlane)
             cam->m_far_plane = (float32)GetPropertyValue<float64>(p, 4);
+        else if (name == sfbxS_UpVector)
+            cam->m_up_vector = get_float3();
+        else if (name == sfbxS_InterestPosition)
+            cam->m_target_position = get_float3();
+        else if (name == sfbxS_AutoComputeClipPanes)
+            cam->m_auto_clip_planes = GetPropertyValue<bool>(p, 4) || GetPropertyValue<int>(p, 4);
         });
 }
 
@@ -564,6 +593,14 @@ float Camera::getAspectRatio() const
 
 float Camera::getNearPlane() const { return m_near_plane; }
 float Camera::getFarPlane() const { return m_far_plane; }
+
+float3 Camera::getUpVector() const { return m_up_vector; }
+float3 Camera::getTargetPosition() const { return m_target_position; }
+
+bool Camera::getAutoClipPlanes() const
+{
+    return m_auto_clip_planes;
+}
 
 
 void Camera::setCameraType(CameraType v) { m_camera_type = v; }
