@@ -8,6 +8,7 @@
 #include "sfbxAnimation.h"
 #include "sfbxDocument.h"
 #include "sfbxParser.h"
+#include <cassert>
 
 namespace sfbx {
 
