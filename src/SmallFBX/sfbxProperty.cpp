@@ -262,6 +262,8 @@ template<> double3 Property::getValue() const { return *(double3*)m_data.data();
 template<> double4 Property::getValue() const { return *(double4*)m_data.data(); }
 template<> double4x4 Property::getValue() const { return *(double4x4*)m_data.data(); }
 
+template<> string_view Property::getValue() const { return getString(); }
+
 template<> span<int16>   Property::getArray() const { convert(PropertyType::Int16Array); return make_span((int16*)m_data.data(), getArraySize()); }
 template<> span<int32>   Property::getArray() const { convert(PropertyType::Int32Array); return make_span((int32*)m_data.data(), getArraySize()); }
 template<> span<int64>   Property::getArray() const { convert(PropertyType::Int64Array); return make_span((int64*)m_data.data(), getArraySize()); }
