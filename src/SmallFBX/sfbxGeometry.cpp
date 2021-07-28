@@ -165,7 +165,7 @@ void GeomMesh::importFBXObjects()
             checkModes(tmp);
             m_color_layers.push_back(std::move(tmp));
         }
-        else if (n->getName() == sfbxS_LayerLayerElementMaterial) {
+        else if (n->getName() == sfbxS_LayerElementMaterial) {
             // colors
             LayerElementI1 tmp;
             tmp.name = GetChildPropertyString(n, sfbxS_Name);
@@ -291,7 +291,7 @@ void GeomMesh::exportFBXObjects()
             continue;
 
         ++clayers;
-        auto l = n->createChild(sfbxS_LayerLayerElementMaterial);
+        auto l = n->createChild(sfbxS_LayerElementMaterial);
         l->createChild(sfbxS_Version, sfbxI_LayerElementMaterialVersion);
         l->createChild(sfbxS_Name, layer.name);
 
@@ -323,7 +323,7 @@ void GeomMesh::exportFBXObjects()
         }
         if (!m_material_layers.empty()) {
             auto le = l->createChild(sfbxS_LayerElement);
-            le->createChild(sfbxS_Type, sfbxS_LayerLayerElementMaterial);
+            le->createChild(sfbxS_Type, sfbxS_LayerElementMaterial);
             le->createChild(sfbxS_TypedIndex, 0);
         }
     }

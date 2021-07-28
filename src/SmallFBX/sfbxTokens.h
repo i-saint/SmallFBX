@@ -195,7 +195,7 @@
 #define sfbxS_LayerElementNormal        "LayerElementNormal"
 #define sfbxS_LayerElementUV            "LayerElementUV"
 #define sfbxS_LayerElementColor         "LayerElementColor"
-#define sfbxS_LayerLayerElementMaterial "LayerElementMaterial"
+#define sfbxS_LayerElementMaterial      "LayerElementMaterial"
 #define sfbxS_MappingInformationType    "MappingInformationType"
 #define sfbxS_ReferenceInformationType  "ReferenceInformationType"
 #define sfbxS_Layer                     "Layer"
