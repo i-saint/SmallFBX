@@ -93,6 +93,15 @@ inline T GetPropertyValue(Node* node, size_t pi = 0)
     return {};
 }
 
+template<class T, class Dst, sfbxRestrict(!is_RawVector<Dst> && !is_vector<Dst>)>
+inline void GetPropertyValue(Dst& dst, Node* node, size_t pi) //=0
+{
+    if (node) {
+        if (Property* prop = node->getProperty(pi))
+            dst = prop->getValue<T>();
+    }
+}
+
 inline string_view GetPropertyString(Node* node, size_t pi = 0)
 {
     if (node)
@@ -138,6 +147,12 @@ inline T GetChildPropertyValue(Node* node, string_view name, size_t pi = 0)
         return GetPropertyValue<T>(node->findChild(name), pi);
     return {};
 }
+template<class T, class Dst, sfbxRestrict(!(is_RawVector<Dst> || is_vector<Dst>))>
+inline void GetChildPropertyValue(Dst& dst, Node* node, string_view name, size_t pi = 0)
+{
+    if (node)
+        GetPropertyValue<T>(dst, node->findChild(name), pi);
+}
 template<class T, class Dst, sfbxRestrict(is_RawVector<Dst> || is_vector<Dst>)>
 inline void GetChildPropertyValue(Dst& dst, Node* node, string_view name)
 {
@@ -147,7 +162,7 @@ inline void GetChildPropertyValue(Dst& dst, Node* node, string_view name)
 inline string_view GetChildPropertyString(Node* node, string_view name, size_t pi = 0)
 {
     if (node)
-        return GetPropertyString(node->findChild(name));
+        return GetPropertyString(node->findChild(name), pi);
     return {};
 }
 
