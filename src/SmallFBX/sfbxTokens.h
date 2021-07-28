@@ -56,7 +56,7 @@
 #define sfbxS_Millisecond       "Millisecond"
 #define sfbxS_UserData          "UserData"
 #define sfbxS_Type              "Type"
-#define sfbxS_TypeIndex         "TypeIndex"
+#define sfbxS_TypedIndex         "TypedIndex"
 #define sfbxS_TypeFlags         "TypeFlags"
 #define sfbxS_Null              "Null"
 #define sfbxS_Skeleton          "Skeleton"

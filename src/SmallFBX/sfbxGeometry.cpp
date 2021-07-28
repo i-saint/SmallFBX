@@ -66,6 +66,46 @@ template<> BlendShape* Geometry::createDeformer()
 
 ObjectSubClass GeomMesh::getSubClass() const { return ObjectSubClass::Mesh; }
 
+template<typename T>
+void GeomMesh::checkModes(LayerElement<T>& layer)
+{
+    auto expected_ref_mode = layer.indices.empty() ? "Direct" : "IndexToDirect";
+    if (layer.reference_mode.empty())
+        layer.reference_mode = expected_ref_mode;
+    else if (layer.reference_mode != expected_ref_mode) {
+        sfbxPrint("unexpected reference mode\n");
+//        layer.reference_mode = expected_ref_mode;
+    }
+
+    auto expected_map_mode = "None";
+    auto mapping_size = (layer.reference_mode == "Direct" ? layer.data.size() : layer.indices.size());
+    int match = 0;
+    if (mapping_size == m_indices.size()) {
+        expected_map_mode = "ByPolygonVertex";
+        match++;
+    }
+    if (mapping_size == m_points.size()) {
+        expected_map_mode = "ByControlPoint";
+        match++;
+    }
+    if (mapping_size == m_counts.size()) {
+        expected_map_mode = "ByPolygon";
+        match++;
+    }
+    if (match == 0 && mapping_size == 1) {
+        expected_map_mode = "AllSame";
+        match++;
+    }
+    if (layer.mapping_mode.empty()) {
+        layer.mapping_mode = expected_map_mode;
+        if (match > 1)
+            sfbxPrint("ambiguous mapping mode\n");
+    } else if (match <= 1 && layer.mapping_mode != expected_map_mode) {
+        sfbxPrint("unexpected mapping mode\n");
+//        layer.mapping_mode = expected_map_mode;
+    }
+}
+
 void GeomMesh::importFBXObjects()
 {
     super::importFBXObjects();
@@ -94,12 +134,13 @@ void GeomMesh::importFBXObjects()
         }
         else if (n->getName() == sfbxS_LayerElementNormal) {
             // normals
-            //auto mapping = n->findChildProperty(sfbxS_MappingInformationType);
-            //auto ref = n->findChildProperty(sfbxS_ReferenceInformationType);
             LayerElementF3 tmp;
             tmp.name = GetChildPropertyString(n, sfbxS_Name);
             GetChildPropertyValue<double3>(tmp.data, n, sfbxS_Normals);
             GetChildPropertyValue<int>(tmp.indices, n, sfbxS_NormalsIndex);
+            GetChildPropertyValue<string_view>(tmp.mapping_mode, n, sfbxS_MappingInformationType);
+            GetChildPropertyValue<string_view>(tmp.reference_mode, n, sfbxS_ReferenceInformationType);
+            checkModes(tmp);
             m_normal_layers.push_back(std::move(tmp));
         }
         else if (n->getName() == sfbxS_LayerElementUV) {
@@ -108,6 +149,9 @@ void GeomMesh::importFBXObjects()
             tmp.name = GetChildPropertyString(n, sfbxS_Name);
             GetChildPropertyValue<double2>(tmp.data, n, sfbxS_UV);
             GetChildPropertyValue<int>(tmp.indices, n, sfbxS_UVIndex);
+            GetChildPropertyValue<string_view>(tmp.mapping_mode, n, sfbxS_MappingInformationType);
+            GetChildPropertyValue<string_view>(tmp.reference_mode, n, sfbxS_ReferenceInformationType);
+            checkModes(tmp);
             m_uv_layers.push_back(std::move(tmp));
         }
         else if (n->getName() == sfbxS_LayerElementColor) {
@@ -116,6 +160,9 @@ void GeomMesh::importFBXObjects()
             tmp.name = GetChildPropertyString(n, sfbxS_Name);
             GetChildPropertyValue<double4>(tmp.data, n, sfbxS_Colors);
             GetChildPropertyValue<int>(tmp.indices, n, sfbxS_ColorIndex);
+            GetChildPropertyValue<string_view>(tmp.mapping_mode, n, sfbxS_MappingInformationType);
+            GetChildPropertyValue<string_view>(tmp.reference_mode, n, sfbxS_ReferenceInformationType);
+            checkModes(tmp);
             m_color_layers.push_back(std::move(tmp));
         }
         else if (n->getName() == sfbxS_LayerLayerElementMaterial) {
@@ -123,7 +170,22 @@ void GeomMesh::importFBXObjects()
             LayerElementI1 tmp;
             tmp.name = GetChildPropertyString(n, sfbxS_Name);
             GetChildPropertyValue<int>(tmp.data, n, sfbxS_Materials);
+            GetChildPropertyValue<string_view>(tmp.mapping_mode, n, sfbxS_MappingInformationType);
+            GetChildPropertyValue<string_view>(tmp.reference_mode, n, sfbxS_ReferenceInformationType);
+//            checkModes(tmp);
             m_material_layers.push_back(std::move(tmp));
+        }
+        else if (n->getName() == sfbxS_Layer) {
+            std::vector<LayerElementDesc> layer;
+            for (auto n : n->getChildren()) {
+                LayerElementDesc tmp;
+                if (n->getName() == sfbxS_LayerElement) {
+                    GetChildPropertyValue<string_view>(tmp.type, n, sfbxS_Type);
+                    GetChildPropertyValue<int>(tmp.index, n, sfbxS_TypedIndex);
+                }
+                layer.push_back(std::move(tmp));
+            }
+            m_layers.push_back(std::move(layer));
         }
     }
 }
@@ -167,16 +229,10 @@ void GeomMesh::exportFBXObjects()
         }
     }
 
-    auto add_mapping_and_reference_info = [this](Node* node, const auto& layer) {
-        if (layer.data.size() == m_indices.size() || layer.indices.size() == m_indices.size())
-            node->createChild(sfbxS_MappingInformationType, "ByPolygonVertex");
-        else if (layer.data.size() == m_points.size() && layer.indices.empty())
-            node->createChild(sfbxS_MappingInformationType, "ByControllPoint");
-
-        if (!layer.indices.empty())
-            node->createChild(sfbxS_ReferenceInformationType, "IndexToDirect");
-        else
-            node->createChild(sfbxS_ReferenceInformationType, "Direct");
+    auto add_mapping_and_reference_info = [](Node* node, const auto& layer) {
+        node->createChild(sfbxS_MappingInformationType, layer.mapping_mode);
+        node->createChild(sfbxS_ReferenceInformationType, layer.reference_mode);
+        //TODO if empty run checkModes() or warning?
     };
 
     int clayers = 0;
@@ -239,6 +295,7 @@ void GeomMesh::exportFBXObjects()
         l->createChild(sfbxS_Version, sfbxI_LayerElementMaterialVersion);
         l->createChild(sfbxS_Name, layer.name);
 
+        //TODO add_mapping_and_reference_info+checkModes?
         l->createChild(sfbxS_MappingInformationType, "ByPolygon");
         l->createChild(sfbxS_ReferenceInformationType, "Direct");
         l->createChild(sfbxS_Materials, layer.data);
@@ -248,25 +305,26 @@ void GeomMesh::exportFBXObjects()
         // layer info
         auto l = n->createChild(sfbxS_Layer, 0);
         l->createChild(sfbxS_Version, sfbxI_LayerVersion);
+        //TODO layers list
         if (!m_normal_layers.empty()) {
             auto le = l->createChild(sfbxS_LayerElement);
             le->createChild(sfbxS_Type, sfbxS_LayerElementNormal);
-            le->createChild(sfbxS_TypeIndex, 0);
+            le->createChild(sfbxS_TypedIndex, 0);
         }
         if (!m_uv_layers.empty()) {
             auto le = l->createChild(sfbxS_LayerElement);
             le->createChild(sfbxS_Type, sfbxS_LayerElementUV);
-            le->createChild(sfbxS_TypeIndex, 0);
+            le->createChild(sfbxS_TypedIndex, 0);
         }
         if (!m_color_layers.empty()) {
             auto le = l->createChild(sfbxS_LayerElement);
             le->createChild(sfbxS_Type, sfbxS_LayerElementColor);
-            le->createChild(sfbxS_TypeIndex, 0);
+            le->createChild(sfbxS_TypedIndex, 0);
         }
         if (!m_material_layers.empty()) {
             auto le = l->createChild(sfbxS_LayerElement);
             le->createChild(sfbxS_Type, sfbxS_LayerLayerElementMaterial);
-            le->createChild(sfbxS_TypeIndex, 0);
+            le->createChild(sfbxS_TypedIndex, 0);
         }
     }
 }
@@ -278,10 +336,12 @@ span<LayerElementF3> GeomMesh::getNormalLayers() const  { return make_span(m_nor
 span<LayerElementF2> GeomMesh::getUVLayers() const      { return make_span(m_uv_layers); }
 span<LayerElementF4> GeomMesh::getColorLayers() const   { return make_span(m_color_layers); }
 span<LayerElementI1> GeomMesh::getMatrialLayers() const { return make_span(m_material_layers); }
+span<std::vector<LayerElementDesc>> GeomMesh::getLayers() const { return make_span(m_layers); }
 
 void GeomMesh::setCounts(span<int> v) { m_counts = v; }
 void GeomMesh::setIndices(span<int> v) { m_indices = v; }
 void GeomMesh::setPoints(span<float3> v) { m_points = v; }
+//TODO update layers list
 void GeomMesh::addNormalLayer(LayerElementF3&& v)   { m_normal_layers.push_back(std::move(v)); }
 void GeomMesh::addUVLayer(LayerElementF2&& v)       { m_uv_layers.push_back(std::move(v)); }
 void GeomMesh::addColorLayer(LayerElementF4&& v)    { m_color_layers.push_back(std::move(v)); }
