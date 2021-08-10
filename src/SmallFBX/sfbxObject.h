@@ -104,6 +104,7 @@ public:
     span<Object*> getChildren() const;
     Object* getParent(size_t i = 0) const;
     Object* getChild(size_t i = 0) const;
+    const std::string& getChildProp(size_t i = 0) const;
     Object* findChild(string_view name) const; // name accepts both full name and display name
 
     void setID(int64 v);
@@ -128,6 +129,7 @@ protected:
 
     std::vector<Object*> m_parents;
     std::vector<Object*> m_children;
+    std::vector<std::string> m_child_property_names;
 };
 
 

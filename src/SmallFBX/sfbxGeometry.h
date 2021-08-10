@@ -31,6 +31,22 @@ protected:
     std::vector<Deformer*> m_deformers;
 };
 
+//for reference only, fbx stores as strings
+enum class LayerMappingMode : int
+{
+    None,
+    ByControlPoint,
+    ByPolygonVertex,
+    ByPolygon,
+    ByEdge,
+    AllSame,
+};
+enum class LayerReferenceMode : int
+{
+    Direct,
+    Index,
+    IndexToDirect,
+};
 
 // FBX can store multiple normal / UV / vertex color channels ("layer" in FBX term).
 // LayerElement store these data.
@@ -41,11 +57,19 @@ struct LayerElement
     RawVector<int> indices; // can be empty. in that case, size of data must equal with vertex count or index count.
     RawVector<T> data;
     RawVector<T> data_deformed; // relevant only for normal layers for now.
+    string_view mapping_mode = "";
+    string_view reference_mode = "";
 };
 using LayerElementF2 = LayerElement<float2>;
 using LayerElementF3 = LayerElement<float3>;
 using LayerElementF4 = LayerElement<float4>;
 using LayerElementI1 = LayerElement<int>;
+
+struct LayerElementDesc
+{
+    std::string type;
+    int index = 0;
+};
 
 // GeomMesh represents polygon mesh data. parent of GeomMesh seems to be always Mesh.
 class GeomMesh : public Geometry
@@ -61,6 +85,7 @@ public:
     span<LayerElementF2> getUVLayers() const;     // can be zero or multiple layers
     span<LayerElementF4> getColorLayers() const;  // can be zero or multiple layers
     span<LayerElementI1> getMatrialLayers() const;// can be zero or multiple layers
+    span<std::vector<LayerElementDesc>> getLayers() const;     //
 
     void setCounts(span<int> v);
     void setIndices(span<int> v);
@@ -69,6 +94,9 @@ public:
     void addUVLayer(LayerElementF2&& v);
     void addColorLayer(LayerElementF4&& v);
     void addMaterialLayer(LayerElementI1&& v);
+
+    template<typename T>
+    void checkModes(LayerElement<T>& layer); //check & update to default/known-correct modes to data/indices
 
     span<float3> getPointsDeformed(bool apply_transform = false);
     span<float3> getNormalsDeformed(size_t layer_index = 0, bool apply_transform = false);
@@ -85,6 +113,7 @@ protected:
     std::vector<LayerElementF2> m_uv_layers;
     std::vector<LayerElementF4> m_color_layers;
     std::vector<LayerElementI1> m_material_layers;
+    std::vector<std::vector<LayerElementDesc>> m_layers;
 };
 
 

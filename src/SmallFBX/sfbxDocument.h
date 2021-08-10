@@ -20,6 +20,39 @@ enum class FileVersion : int
     Default = Fbx2020,
 };
 
+struct GlobalSettings
+{
+    double unit_scale = 1;
+    std::string camera = "Camera";
+    int64_t time_stop = 0;//sfbxI_TicksPerSecond;
+
+    //TODO
+    //sfbxS_UpAxis, sfbxS_int sfbxS_int, sfbxS_Integer, "", 1);
+    //sfbxS_UpAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+    //sfbxS_FrontAxis, sfbxS_int, sfbxS_Integer, "", 2);
+    //sfbxS_FrontAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+    //sfbxS_CoordAxis, sfbxS_int, sfbxS_Integer, "", 0);
+    //sfbxS_CoordAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+    //sfbxS_OriginalUpAxis, sfbxS_int, sfbxS_Integer, "", -1);
+    //sfbxS_OriginalUpAxisSign, sfbxS_int, sfbxS_Integer, "", 1);
+
+    //sfbxS_UnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
+    //sfbxS_OriginalUnitScaleFactor, sfbxS_double, sfbxS_Number, "", 1.0);
+    //sfbxS_AmbientColor, sfbxS_ColorRGB sfbxS_ColorRGB, sfbxS_Color, "", 0.0, 0.0, 0.0);
+    //sfbxS_DefaultCamera, sfbxS_KString, "", "", "Producer Perspective");
+    //sfbxS_TimeMode, sfbxS_enum, "", "", 0);
+    //sfbxS_TimeProtocol, sfbxS_enum, "", "", 2);
+    //sfbxS_SnapOnFrameMode, sfbxS_enum, "", "", 0);
+    //sfbxS_TimeSpanStart, sfbxS_KTime, sfbxS_Time, "", (int64)0);
+    //sfbxS_CustomFrameRate, sfbxS_double, sfbxS_Number, "", -1.0);
+
+    //sfbxS_TimeMarker, sfbxS_Compound, "", "");
+    //sfbxS_CurrentTimeMarker, sfbxS_int, sfbxS_Integer, "", -1);
+
+    void exportFBXNodes(Document *doc);
+    void importFBXObjects(Document *doc);
+};
+
 class Document
 {
 public:
@@ -68,6 +101,8 @@ public:
     {
         return count(m_objects, [](auto& p) { return as<T>(p.get()) && p->getID() != 0; });
     }
+
+    GlobalSettings global_settings;
 
 
 public:

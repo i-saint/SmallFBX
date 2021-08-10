@@ -89,7 +89,7 @@ void Property::read(std::istream& is)
         else if (encoding == 1) {
             RawVector<char> compressed(src_size);
             readv(is, compressed.data(), src_size);
-            uncompress2((Bytef*)m_data.data(), &dest_size, (const Bytef*)compressed.data(), &src_size);
+            uncompress((Bytef*)m_data.data(), &dest_size, (const Bytef*)compressed.data(), src_size);
         }
     }
 }
@@ -261,6 +261,8 @@ template<> double2 Property::getValue() const { return *(double2*)m_data.data();
 template<> double3 Property::getValue() const { return *(double3*)m_data.data(); }
 template<> double4 Property::getValue() const { return *(double4*)m_data.data(); }
 template<> double4x4 Property::getValue() const { return *(double4x4*)m_data.data(); }
+
+template<> string_view Property::getValue() const { return getString(); }
 
 template<> span<int16>   Property::getArray() const { convert(PropertyType::Int16Array); return make_span((int16*)m_data.data(), getArraySize()); }
 template<> span<int32>   Property::getArray() const { convert(PropertyType::Int32Array); return make_span((int32*)m_data.data(), getArraySize()); }

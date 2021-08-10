@@ -201,16 +201,21 @@ void Object::addChild(Object* v)
 {
     if (v) {
         m_children.push_back(v);
+        m_child_property_names.emplace_back();
         v->addParent(this);
     }
 }
-void Object::addChild(Object* v, string_view /*p*/)
+void Object::addChild(Object* v, string_view p)
 {
     addChild(v);
+    if (v) {
+        m_child_property_names.back() = p;
+    }
 }
 
 void Object::eraseChild(Object* v)
 {
+    //TODO m_child_property_names
     if (erase(m_children, v))
         v->eraseParent(this);
 }
@@ -236,6 +241,7 @@ span<Object*> Object::getParents() const  { return make_span(m_parents); }
 span<Object*> Object::getChildren() const { return make_span(m_children); }
 Object* Object::getParent(size_t i) const { return i < m_parents.size() ? m_parents[i] : nullptr; }
 Object* Object::getChild(size_t i) const  { return i < m_children.size() ? m_children[i] : nullptr; }
+const std::string& Object::getChildProp(size_t i) const { static std::string nulls; return i < m_child_property_names.size() ? m_child_property_names[i] : nulls; }
 
 Object* Object::findChild(string_view name) const
 {
